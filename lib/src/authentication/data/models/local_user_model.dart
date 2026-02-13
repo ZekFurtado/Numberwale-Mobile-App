@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import '../../../../core/utils/typedef.dart';
 import '../../domain/entities/local_user.dart';
 

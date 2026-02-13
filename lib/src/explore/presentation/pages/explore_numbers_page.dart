@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:numberwale/core/models/filter_models.dart';
 import 'package:numberwale/core/utils/routes.dart';
-import 'package:numberwale/core/widgets/category_filter_chip.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
 import 'package:numberwale/core/widgets/product_list_item.dart';
@@ -17,7 +16,6 @@ class ExploreNumbersPage extends StatefulWidget {
 class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
   final TextEditingController _searchController = TextEditingController();
   NumberFilters _filters = const NumberFilters();
-  bool _isLoading = false;
 
   @override
   void dispose() {

@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:numberwale/src/authentication/domain/entities/local_user.dart';
 
-import '../../src/authentication/domain/entities/local_user.dart';
-
 class UserProvider extends ChangeNotifier {
   LocalUser? _user;
 
