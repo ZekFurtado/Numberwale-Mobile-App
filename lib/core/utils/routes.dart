@@ -16,6 +16,12 @@ import 'package:numberwale/src/orders/presentation/pages/orders_page.dart';
 import 'package:numberwale/src/orders/presentation/pages/order_detail_page.dart';
 import 'package:numberwale/src/address/presentation/pages/address_list_page.dart';
 import 'package:numberwale/src/address/presentation/pages/address_form_page.dart' as address_form;
+import 'package:numberwale/src/profile/presentation/pages/edit_profile_page.dart';
+import 'package:numberwale/src/profile/presentation/pages/change_password_page.dart';
+import 'package:numberwale/src/contact/presentation/pages/contact_us_page.dart';
+import 'package:numberwale/src/contact/presentation/pages/careers_page.dart';
+import 'package:numberwale/src/custom_request/presentation/pages/custom_request_page.dart';
+import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
 
 class Routes {
   // Splash & Onboarding
@@ -105,7 +111,17 @@ class Routes {
         // Addresses
         addresses: (context) => const AddressListPage(),
 
-        // More routes will be added as pages are created
+        // Profile
+        editProfile: (context) => const EditProfilePage(),
+        changePassword: (context) => const ChangePasswordPage(),
+
+        // Contact & Support
+        contactUs: (context) => const ContactUsPage(),
+        careers: (context) => const CareersPage(),
+
+        // Custom Requests
+        customRequest: (context) => const CustomRequestPage(),
+        numerologyConsultation: (context) => const NumerologyPage(),
       };
 
   /// Generate routes for dynamic navigation (with parameters)

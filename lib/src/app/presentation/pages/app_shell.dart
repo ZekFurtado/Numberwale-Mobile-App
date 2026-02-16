@@ -10,14 +10,22 @@ import 'package:numberwale/src/app/presentation/pages/placeholders/offer_zone_pl
 import 'package:numberwale/src/explore/presentation/pages/explore_numbers_page.dart';
 // Import pages
 import 'package:numberwale/src/home/presentation/pages/home_page.dart';
+import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
+import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<AppNavigationCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => di.sl<AppNavigationCubit>()),
+        BlocProvider(
+            create: (_) =>
+                di.sl<HomeBloc>()..add(const LoadHomeDataEvent())),
+        BlocProvider(create: (_) => di.sl<ProductBloc>()),
+      ],
       child: const _AppShellView(),
     );
   }

@@ -1,35 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/src/account/presentation/widgets/account_menu_item.dart';
 import 'package:numberwale/src/account/presentation/widgets/profile_header.dart';
+import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
+import 'package:numberwale/src/profile/presentation/bloc/profile_bloc.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
 
-  // Mock user data - will be replaced with BLoC
-  Map<String, dynamic> _getUserData() {
-    return {
-      'name': 'John Doe',
-      'email': 'john.doe@example.com',
-      'phoneNumber': '+91 98765 43210',
-    };
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => di.sl<ProfileBloc>()..add(const LoadProfileEvent()),
+      child: const _AccountView(),
+    );
   }
+}
+
+class _AccountView extends StatelessWidget {
+  const _AccountView();
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.pop(context);
-              // Perform logout - will be implemented with BLoC
+              Navigator.pop(ctx);
+              context.read<AuthenticationBloc>().add(const SignOutUserEvent());
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 Routes.login,
@@ -46,21 +53,35 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = _getUserData();
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // App Bar with profile header
-          SliverToBoxAdapter(
-            child: ProfileHeader(
-              name: user['name'],
-              email: user['email'],
-              phoneNumber: user['phoneNumber'],
-              onEditTap: () {
-                Navigator.pushNamed(context, Routes.editProfile);
-              },
-            ),
+          // Profile header — shows real data from ProfileBloc
+          BlocBuilder<ProfileBloc, ProfileState>(
+            builder: (context, state) {
+              String name = 'Loading...';
+              String email = '';
+              String phone = '';
+              if (state is ProfileLoaded || state is ProfileUpdated) {
+                final profile = state is ProfileLoaded
+                    ? state.profile
+                    : (state as ProfileUpdated).profile;
+                name = profile.name;
+                email = profile.email;
+                phone = '+91 ${profile.mobile}';
+              }
+              return SliverToBoxAdapter(
+                child: ProfileHeader(
+                  name: name,
+                  email: email,
+                  phoneNumber: phone,
+                  onEditTap: () {
+                    Navigator.pushNamed(context, Routes.editProfile);
+                  },
+                ),
+              );
+            },
           ),
 
           // Menu sections
@@ -169,7 +190,10 @@ class AccountPage extends StatelessWidget {
                         subtitle: 'Get expert guidance',
                         iconColor: theme.colorScheme.tertiary,
                         onTap: () {
-                          Navigator.pushNamed(context, Routes.numerologyConsultation);
+                          Navigator.pushNamed(
+                            context,
+                            Routes.numerologyConsultation,
+                          );
                         },
                         showDivider: false,
                       ),
@@ -224,7 +248,10 @@ class AccountPage extends StatelessWidget {
                         icon: Icons.description_outlined,
                         title: 'Terms & Conditions',
                         onTap: () {
-                          Navigator.pushNamed(context, Routes.termsAndConditions);
+                          Navigator.pushNamed(
+                            context,
+                            Routes.termsAndConditions,
+                          );
                         },
                         showDivider: false,
                       ),
@@ -237,7 +264,9 @@ class AccountPage extends StatelessWidget {
                 // Logout button
                 Card(
                   elevation: 1,
-                  color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+                  color: theme.colorScheme.errorContainer.withValues(
+                    alpha: 0.3,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

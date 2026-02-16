@@ -6,6 +6,8 @@ import 'package:numberwale/core/widgets/featured_numbers_section.dart';
 import 'package:numberwale/core/widgets/number_search_bar.dart';
 import 'package:numberwale/core/widgets/promotional_banner.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
+import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
+import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,8 +25,39 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // Mock data for promotional banners
-  List<PromotionalBanner> _getPromotionalBanners(BuildContext context) {
+  /// Converts a hex color string (e.g. "#RRGGBB" or "RRGGBB") to a [Color].
+  /// Returns [fallback] on any parse error.
+  Color _parseColor(String? hexColor, Color fallback) {
+    if (hexColor == null || hexColor.isEmpty) return fallback;
+    try {
+      final hex = hexColor.replaceFirst('#', '');
+      if (hex.length == 6) {
+        return Color(int.parse('FF$hex', radix: 16));
+      }
+      if (hex.length == 8) {
+        return Color(int.parse(hex, radix: 16));
+      }
+    } catch (_) {
+      // fall through to fallback
+    }
+    return fallback;
+  }
+
+  /// Maps a category slug or icon name to a Flutter [IconData].
+  IconData _categoryIcon(String? iconName) {
+    if (iconName == null) return Icons.phone_android;
+    final lower = iconName.toLowerCase();
+    if (lower == 'vip' || lower.contains('vip')) return Icons.star;
+    if (lower == 'fancy' || lower.contains('fancy')) return Icons.auto_awesome;
+    if (lower == 'lucky' || lower.contains('lucky')) return Icons.casino;
+    if (lower == 'repeated' || lower == 'repeat') return Icons.repeat;
+    if (lower == 'palindrome') return Icons.sync;
+    if (lower == 'numerology') return Icons.calculate;
+    return Icons.phone_android;
+  }
+
+  /// Returns the 3 hardcoded promotional banners used as mock/fallback data.
+  List<PromotionalBanner> _getMockPromotionalBanners(BuildContext context) {
     final theme = Theme.of(context);
     return [
       PromotionalBanner(
@@ -50,7 +83,7 @@ class _HomePageState extends State<HomePage> {
       ),
       PromotionalBanner(
         title: 'Numerology Consultation',
-        subtitle: 'Get expert advice on lucky numbers',
+        subtitle: 'Expert advice on lucky numbers',
         buttonText: 'Book Now',
         icon: Icons.auto_awesome,
         backgroundColor: theme.colorScheme.tertiaryContainer,
@@ -62,8 +95,8 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
-  // Mock data for categories
-  List<CategoryItem> _getCategories(BuildContext context) {
+  /// Returns mock category items used as fallback when the API list is empty.
+  List<CategoryItem> _getMockCategories(BuildContext context) {
     final theme = Theme.of(context);
     return [
       CategoryItem(
@@ -105,8 +138,8 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
-  // Mock data for featured numbers
-  List<FeaturedNumber> _getFeaturedNumbers(BuildContext context) {
+  /// Returns mock featured numbers used as fallback when the API list is empty.
+  List<FeaturedNumber> _getMockFeaturedNumbers(BuildContext context) {
     return [
       FeaturedNumber(
         phoneNumber: '9876543210',
@@ -170,8 +203,8 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
-  // Mock data for latest additions
-  List<FeaturedNumber> _getLatestNumbers(BuildContext context) {
+  /// Returns mock latest numbers used as fallback when the API list is empty.
+  List<FeaturedNumber> _getMockLatestNumbers(BuildContext context) {
     return [
       FeaturedNumber(
         phoneNumber: '9811111111',
@@ -215,13 +248,162 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, state) {
+        if (state is LoadingHomeData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (state is HomeError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    state.message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context
+                          .read<HomeBloc>()
+                          .add(const LoadHomeDataEvent());
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return _buildContent(context, state);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, HomeState state) {
     final theme = Theme.of(context);
+
+    // Resolve data from loaded state or fall back to mock data.
+    final List<PromotionalBanner> banners;
+    final List<CategoryItem> categories;
+    final List<FeaturedNumber> featuredNumbers;
+    final List<FeaturedNumber> latestNumbers;
+
+    if (state is HomeDataLoaded) {
+      // Map API banners → PromotionalBanner widgets
+      if (state.banners.isEmpty) {
+        banners = _getMockPromotionalBanners(context);
+      } else {
+        banners = state.banners.map((b) {
+          return PromotionalBanner(
+            title: b.title,
+            subtitle: b.subtitle,
+            buttonText: b.buttonText,
+            backgroundColor: _parseColor(
+                b.backgroundColor, theme.colorScheme.primaryContainer),
+            textColor:
+                _parseColor(b.textColor, theme.colorScheme.onPrimaryContainer),
+            onTap: () {
+              if (b.actionUrl != null && b.actionUrl!.isNotEmpty) {
+                Navigator.pushNamed(context, b.actionUrl!);
+              }
+            },
+          );
+        }).toList();
+      }
+
+      // Map API categories → CategoryItem objects
+      if (state.categories.isEmpty) {
+        categories = _getMockCategories(context);
+      } else {
+        categories = state.categories.map((cat) {
+          return CategoryItem(
+            title: cat.name,
+            icon: _categoryIcon(cat.slug),
+            color: _parseColor(cat.color, theme.colorScheme.primary),
+            count: cat.count,
+            onTap: () {
+              context.read<AppNavigationCubit>().selectTab(1);
+            },
+          );
+        }).toList();
+      }
+
+      // Map API featured numbers → FeaturedNumber objects
+      if (state.featuredNumbers.isEmpty) {
+        featuredNumbers = _getMockFeaturedNumbers(context);
+      } else {
+        featuredNumbers = state.featuredNumbers.map((pn) {
+          return FeaturedNumber(
+            phoneNumber: pn.number,
+            price: pn.price,
+            category: pn.category,
+            features: pn.features,
+            discount: pn.discount > 0 ? pn.discount.toDouble() : null,
+            isFeatured: pn.isFeatured,
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                Routes.productDetail,
+                arguments: pn.number,
+              );
+            },
+            onAddToCart: () {
+              context.read<CartBloc>().add(
+                    AddToCartEvent(productId: pn.id ?? pn.number),
+                  );
+            },
+          );
+        }).toList();
+      }
+
+      // Map API latest numbers → FeaturedNumber objects
+      if (state.latestNumbers.isEmpty) {
+        latestNumbers = _getMockLatestNumbers(context);
+      } else {
+        latestNumbers = state.latestNumbers.map((pn) {
+          return FeaturedNumber(
+            phoneNumber: pn.number,
+            price: pn.price,
+            category: pn.category,
+            features: pn.features,
+            discount: pn.discount > 0 ? pn.discount.toDouble() : null,
+            isFeatured: pn.isFeatured,
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                Routes.productDetail,
+                arguments: pn.number,
+              );
+            },
+            onAddToCart: () {
+              context.read<CartBloc>().add(
+                    AddToCartEvent(productId: pn.id ?? pn.number),
+                  );
+            },
+          );
+        }).toList();
+      }
+    } else {
+      // Initial or refreshing state: show mock data so UI isn't empty
+      banners = _getMockPromotionalBanners(context);
+      categories = _getMockCategories(context);
+      featuredNumbers = _getMockFeaturedNumbers(context);
+      latestNumbers = _getMockLatestNumbers(context);
+    }
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
-          // TODO: Implement refresh logic
-          await Future.delayed(const Duration(seconds: 1));
+          context
+              .read<HomeBloc>()
+              .add(const RefreshHomeDataEvent());
         },
         child: CustomScrollView(
           slivers: [
@@ -281,7 +463,7 @@ class _HomePageState extends State<HomePage> {
 
                   // Promotional Banners Carousel
                   PromotionalCarousel(
-                    banners: _getPromotionalBanners(context),
+                    banners: banners,
                   ),
                   const SizedBox(height: 32),
 
@@ -289,7 +471,7 @@ class _HomePageState extends State<HomePage> {
                   CategorySection(
                     title: 'Browse by Category',
                     subtitle: 'Find numbers that match your preference',
-                    categories: _getCategories(context),
+                    categories: categories,
                     onSeeAllTap: () {
                       context.read<AppNavigationCubit>().selectTab(1);
                     },
@@ -300,7 +482,7 @@ class _HomePageState extends State<HomePage> {
                   FeaturedNumbersSection(
                     title: 'Featured VIP Numbers',
                     subtitle: 'Handpicked premium selections',
-                    numbers: _getFeaturedNumbers(context),
+                    numbers: featuredNumbers,
                     onSeeAllTap: () {
                       context.read<AppNavigationCubit>().selectTab(1);
                     },
@@ -311,7 +493,7 @@ class _HomePageState extends State<HomePage> {
                   FeaturedNumbersSection(
                     title: 'Latest Additions',
                     subtitle: 'Fresh numbers just added',
-                    numbers: _getLatestNumbers(context),
+                    numbers: latestNumbers,
                     onSeeAllTap: () {
                       context.read<AppNavigationCubit>().selectTab(1);
                     },
@@ -323,7 +505,8 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: PromotionalBanner(
                       title: 'Need a Custom Number?',
-                      subtitle: 'We can help you find or create the perfect number',
+                      subtitle:
+                          'We can help you find or create the perfect number',
                       buttonText: 'Request Custom Number',
                       icon: Icons.create,
                       backgroundColor: theme.colorScheme.tertiaryContainer,

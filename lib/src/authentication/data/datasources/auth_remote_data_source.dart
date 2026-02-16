@@ -143,8 +143,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         Uri.parse(BackendConfig.verifyOtpUrl),
         headers: BackendConfig.headers,
         body: jsonEncode({
-          if (email != null) 'email': email,
-          if (mobile != null) 'mobile': mobile,
+          'email': ?email,
+          'mobile': ?mobile,
           'otp': otp,
         }),
       );
@@ -232,6 +232,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'password': password,
         }),
       );
+
+      print("AUTH RESPONSE");
+      print(response.statusCode);
+      print(response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;
