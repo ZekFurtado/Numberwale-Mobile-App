@@ -4,7 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/utils/theme.dart';
+import 'package:numberwale/src/address/presentation/bloc/address_bloc.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
+import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
+import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
+import 'package:numberwale/src/profile/presentation/bloc/profile_bloc.dart';
 import 'package:provider/provider.dart';
 
 import 'core/common/user_provider.dart';
@@ -39,6 +43,8 @@ class NumberwaleApp extends StatelessWidget {
           BlocProvider(
             create: (_) => di.sl<AuthenticationBloc>(),
           ),
+          BlocProvider(create: (_) => di.sl<HomeBloc>()),
+
         ],
         child: MaterialApp(
           title: 'Numberwale',

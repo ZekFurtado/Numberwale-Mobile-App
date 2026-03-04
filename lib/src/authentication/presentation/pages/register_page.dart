@@ -151,261 +151,258 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BlocProvider(
-      create: (_) => sl<AuthenticationBloc>(),
-      child: BlocConsumer<AuthenticationBloc, AuthenticationState>(
-        listener: (context, state) {
-          if (state is UserRegistered) {
-            // Navigate to OTP verification page
-            Navigator.pushNamed(
-              context,
-              Routes.otpVerification,
-              arguments: {
-                'contact': state.mobile,
-                'email': state.email,
-                'verificationType': 'registration',
-              },
-            );
-          } else if (state is AuthenticationError) {
-            // Show error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colorScheme.error,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          final isLoading = state is RegisteringUser;
-
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Create Account'),
+    return BlocConsumer<AuthenticationBloc, AuthenticationState>(
+      listener: (context, state) {
+        if (state is UserRegistered) {
+          // Navigate to OTP verification page
+          Navigator.pushNamed(
+            context,
+            Routes.otpVerification,
+            arguments: {
+              'contact': state.mobile,
+              'email': state.email,
+              'verificationType': 'registration',
+            },
+          );
+        } else if (state is AuthenticationError) {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: theme.colorScheme.error,
             ),
-            body: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Welcome text
-                Text(
-                  'Register',
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create your account to get started',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 32),
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is RegisteringUser;
 
-                // Account Type Toggle
-                Text(
-                  'Account Type',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Create Account'),
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Welcome text
+              Text(
+                'Register',
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _AccountTypeButton(
-                          label: 'Individual',
-                          isSelected: _accountType == AccountType.individual,
-                          onTap: () {
-                            setState(() {
-                              _accountType = AccountType.individual;
-                            });
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: _AccountTypeButton(
-                          label: 'Corporate',
-                          isSelected: _accountType == AccountType.corporate,
-                          onTap: () {
-                            setState(() {
-                              _accountType = AccountType.corporate;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Create your account to get started',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 32),
 
-                // Name
-                TextInputField(
-                  controller: _nameController,
-                  label: 'Full Name',
-                  hintText: 'Enter your full name',
-                  icon: const Icon(Icons.person_outline),
-                  validator: _validateName,
+              // Account Type Toggle
+              Text(
+                'Account Type',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 16),
-
-                // Email
-                TextInputField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hintText: 'Enter your email',
-                  keyboardType: TextInputType.emailAddress,
-                  icon: const Icon(Icons.email_outlined),
-                  validator: _validateEmail,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 16),
-
-                // Mobile
-                PhoneInputField(
-                  controller: _mobileController,
-                  validator: _validatePhone,
-                ),
-                const SizedBox(height: 16),
-
-                // Corporate fields
-                if (_accountType == AccountType.corporate) ...[
-                  TextInputField(
-                    controller: _companyNameController,
-                    label: 'Company Name',
-                    hintText: 'Enter company name',
-                    icon: const Icon(Icons.business_outlined),
-                    validator: _validateCompanyName,
-                  ),
-                  const SizedBox(height: 16),
-                  TextInputField(
-                    controller: _gstinController,
-                    label: 'GSTIN',
-                    hintText: 'Enter GSTIN',
-                    icon: const Icon(Icons.receipt_outlined),
-                    validator: _validateGSTIN,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Password
-                PasswordInputField(
-                  controller: _passwordController,
-                  labelText: 'Password',
-                  showStrengthIndicator: true,
-                  showRequirements: true,
-                  validator: _validatePassword,
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm Password
-                PasswordInputField(
-                  controller: _confirmPasswordController,
-                  labelText: 'Confirm Password',
-                  validator: _validateConfirmPassword,
-                ),
-                const SizedBox(height: 24),
-
-                // WhatsApp updates checkbox
-                CheckboxListTile(
-                  value: _whatsappUpdates,
-                  onChanged: (value) {
-                    setState(() {
-                      _whatsappUpdates = value ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    'Receive updates on WhatsApp',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-
-                // Terms checkbox
-                CheckboxListTile(
-                  value: _termsAccepted,
-                  onChanged: (value) {
-                    setState(() {
-                      _termsAccepted = value ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                  title: Row(
-                    children: [
-                      Text(
-                        'I accept the ',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(context, Routes.termsAndConditions);
-                        },
-                        child: Text(
-                          'Terms & Conditions',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Register button
-                ElevatedButton(
-                  onPressed: isLoading ? null : _handleRegister,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Register'),
-                ),
-                const SizedBox(height: 24),
-
-                // Login link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
                   children: [
-                    Text(
-                      'Already have an account? ',
-                      style: theme.textTheme.bodyMedium,
+                    Expanded(
+                      child: _AccountTypeButton(
+                        label: 'Individual',
+                        isSelected: _accountType == AccountType.individual,
+                        onTap: () {
+                          setState(() {
+                            _accountType = AccountType.individual;
+                          });
+                        },
+                      ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Login'),
+                    Expanded(
+                      child: _AccountTypeButton(
+                        label: 'Corporate',
+                        isSelected: _accountType == AccountType.corporate,
+                        onTap: () {
+                          setState(() {
+                            _accountType = AccountType.corporate;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 24),
+
+              // Name
+              TextInputField(
+                controller: _nameController,
+                label: 'Full Name',
+                hintText: 'Enter your full name',
+                icon: const Icon(Icons.person_outline),
+                validator: _validateName,
+              ),
+              const SizedBox(height: 16),
+
+              // Email
+              TextInputField(
+                controller: _emailController,
+                label: 'Email',
+                hintText: 'Enter your email',
+                keyboardType: TextInputType.emailAddress,
+                icon: const Icon(Icons.email_outlined),
+                validator: _validateEmail,
+              ),
+              const SizedBox(height: 16),
+
+              // Mobile
+              PhoneInputField(
+                controller: _mobileController,
+                validator: _validatePhone,
+              ),
+              const SizedBox(height: 16),
+
+              // Corporate fields
+              if (_accountType == AccountType.corporate) ...[
+                TextInputField(
+                  controller: _companyNameController,
+                  label: 'Company Name',
+                  hintText: 'Enter company name',
+                  icon: const Icon(Icons.business_outlined),
+                  validator: _validateCompanyName,
+                ),
+                const SizedBox(height: 16),
+                TextInputField(
+                  controller: _gstinController,
+                  label: 'GSTIN',
+                  hintText: 'Enter GSTIN',
+                  icon: const Icon(Icons.receipt_outlined),
+                  validator: _validateGSTIN,
+                ),
+                const SizedBox(height: 16),
               ],
-            ),
+
+              // Password
+              PasswordInputField(
+                controller: _passwordController,
+                labelText: 'Password',
+                showStrengthIndicator: true,
+                showRequirements: true,
+                validator: _validatePassword,
+              ),
+              const SizedBox(height: 16),
+
+              // Confirm Password
+              PasswordInputField(
+                controller: _confirmPasswordController,
+                labelText: 'Confirm Password',
+                validator: _validateConfirmPassword,
+              ),
+              const SizedBox(height: 24),
+
+              // WhatsApp updates checkbox
+              CheckboxListTile(
+                value: _whatsappUpdates,
+                onChanged: (value) {
+                  setState(() {
+                    _whatsappUpdates = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  'Receive updates on WhatsApp',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+
+              // Terms checkbox
+              CheckboxListTile(
+                value: _termsAccepted,
+                onChanged: (value) {
+                  setState(() {
+                    _termsAccepted = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: Row(
+                  children: [
+                    Text(
+                      'I accept the ',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, Routes.termsAndConditions);
+                      },
+                      child: Text(
+                        'Terms & Conditions',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Register button
+              ElevatedButton(
+                onPressed: isLoading ? null : _handleRegister,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Register'),
+              ),
+              const SizedBox(height: 24),
+
+              // Login link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Already have an account? ',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Login'),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
-          );
-        },
-      ),
+    ),
+        );
+      },
     );
   }
 }

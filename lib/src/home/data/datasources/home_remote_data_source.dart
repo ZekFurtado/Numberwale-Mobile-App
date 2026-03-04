@@ -34,51 +34,37 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<List<BannerModel>> getBanners() async {
-    try {
-      final response = await _client.get(
-        Uri.parse(BackendConfig.bannersUrl),
-        headers: BackendConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        return data
-            .map((json) => BannerModel.fromMap(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw ServerException(
-          message: 'Failed to fetch banners',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
+    // Endpoint removed - feature disabled
+    throw const ServerException(
+      message: 'Banners endpoint is not available',
+      statusCode: '501',
+    );
   }
 
   @override
   Future<List<CategoryModel>> getCategories() async {
     try {
       final response = await _client.get(
-        Uri.parse(BackendConfig.categoriesUrl),
+        Uri.parse(BackendConfig.getCategoriesUrl),
         headers: BackendConfig.headers,
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        return data
-            .map((json) => CategoryModel.fromMap(json as Map<String, dynamic>))
-            .toList();
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+
+        // Check if response has a 'data' field (common API pattern)
+        final dynamic data = jsonResponse['data'] ?? jsonResponse;
+
+        if (data is List) {
+          return data
+              .map((json) => CategoryModel.fromMap(json as Map<String, dynamic>))
+              .toList();
+        } else {
+          throw const ServerException(
+            message: 'Invalid response format for categories',
+            statusCode: '500',
+          );
+        }
       } else {
         throw ServerException(
           message: 'Failed to fetch categories',
@@ -102,115 +88,28 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<List<PhoneNumberModel>> getFeaturedNumbers({int limit = 10}) async {
-    try {
-      final uri = Uri.parse(BackendConfig.featuredNumbersUrl)
-          .replace(queryParameters: {'limit': limit.toString()});
-
-      final response = await _client.get(
-        uri,
-        headers: BackendConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        return data
-            .map((json) =>
-                PhoneNumberModel.fromMap(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw ServerException(
-          message: 'Failed to fetch featured numbers',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
+    // Endpoint removed - feature disabled
+    throw const ServerException(
+      message: 'Featured numbers endpoint is not available',
+      statusCode: '501',
+    );
   }
 
   @override
   Future<List<PhoneNumberModel>> getLatestNumbers({int limit = 10}) async {
-    try {
-      final uri = Uri.parse(BackendConfig.latestNumbersUrl)
-          .replace(queryParameters: {'limit': limit.toString()});
-
-      final response = await _client.get(
-        uri,
-        headers: BackendConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        return data
-            .map((json) =>
-                PhoneNumberModel.fromMap(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw ServerException(
-          message: 'Failed to fetch latest numbers',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
+    // Endpoint removed - feature disabled
+    throw const ServerException(
+      message: 'Latest numbers endpoint is not available',
+      statusCode: '501',
+    );
   }
 
   @override
   Future<List<PhoneNumberModel>> getTrendingNumbers({int limit = 10}) async {
-    try {
-      final uri = Uri.parse(BackendConfig.trendingNumbersUrl)
-          .replace(queryParameters: {'limit': limit.toString()});
-
-      final response = await _client.get(
-        uri,
-        headers: BackendConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        return data
-            .map((json) =>
-                PhoneNumberModel.fromMap(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw ServerException(
-          message: 'Failed to fetch trending numbers',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
+    // Endpoint removed - feature disabled
+    throw const ServerException(
+      message: 'Trending numbers endpoint is not available',
+      statusCode: '501',
+    );
   }
 }

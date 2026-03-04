@@ -8,10 +8,7 @@ class ChangePasswordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<ProfileBloc>(),
-      child: const _ChangePasswordView(),
-    );
+    return const _ChangePasswordView();
   }
 }
 

@@ -8,10 +8,7 @@ class NumerologyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<NumerologyBloc>(),
-      child: const _NumerologyView(),
-    );
+    return const _NumerologyView();
   }
 }
 

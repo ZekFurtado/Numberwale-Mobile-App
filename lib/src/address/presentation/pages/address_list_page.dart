@@ -13,10 +13,7 @@ class AddressListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<AddressBloc>()..add(const GetAddressesEvent()),
-      child: const _AddressListView(),
-    );
+    return const _AddressListView();
   }
 }
 

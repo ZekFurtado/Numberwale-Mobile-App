@@ -12,10 +12,7 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<CartBloc>()..add(const LoadCartEvent()),
-      child: const _CartView(),
-    );
+    return const _CartView();
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:numberwale/src/home/domain/entities/banner.dart';
@@ -51,35 +53,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final featuredNumbersResult = results[2];
     final latestNumbersResult = results[3];
 
-    // Handle failures
-    if (bannersResult.isLeft()) {
-      final failure = bannersResult.fold((l) => l, (r) => null);
-      emit(HomeError(message: failure?.message ?? 'Failed to load banners'));
-      return;
-    }
-
+    // Handle categories - this endpoint is now active
     if (categoriesResult.isLeft()) {
       final failure = categoriesResult.fold((l) => l, (r) => null);
+      log(failure?.message ?? "Categories Failed");
       emit(
           HomeError(message: failure?.message ?? 'Failed to load categories'));
       return;
     }
 
-    if (featuredNumbersResult.isLeft()) {
-      final failure = featuredNumbersResult.fold((l) => l, (r) => null);
-      emit(HomeError(
-          message: failure?.message ?? 'Failed to load featured numbers'));
-      return;
-    }
-
-    if (latestNumbersResult.isLeft()) {
-      final failure = latestNumbersResult.fold((l) => l, (r) => null);
-      emit(HomeError(
-          message: failure?.message ?? 'Failed to load latest numbers'));
-      return;
-    }
-
-    // Extract data
+    // Extract data - banners, featured, and latest are disabled, so return empty lists
+    // Categories should return real data from API
+    // UI will fall back to mock data for disabled endpoints
     final banners =
         bannersResult.fold((l) => <Banner>[], (r) => r as List<Banner>);
     final categories =
@@ -118,7 +103,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final featuredNumbersResult = results[2];
     final latestNumbersResult = results[3];
 
-    // Handle failures (for refresh, we can be more lenient and show partial data)
+    // Extract data - banners, featured, and latest are disabled, so return empty lists
+    // Categories should return real data from API
+    // For refresh, we're lenient and show partial data even if categories fail
     final banners =
         bannersResult.fold((l) => <Banner>[], (r) => r as List<Banner>);
     final categories =

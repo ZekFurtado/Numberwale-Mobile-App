@@ -9,10 +9,7 @@ class CustomRequestPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<CustomRequestBloc>(),
-      child: const _CustomRequestView(),
-    );
+    return const _CustomRequestView();
   }
 }
 

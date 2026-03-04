@@ -92,209 +92,206 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BlocProvider(
-      create: (_) => sl<AuthenticationBloc>(),
-      child: BlocConsumer<AuthenticationBloc, AuthenticationState>(
-        listener: (context, state) {
-          print(state);
-          if (state is LoggedIn) {
-            // Navigate to app shell on successful login
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              Routes.appShell,
-              (route) => false,
-            );
-          } else if (state is OTPSent) {
-            // Navigate to OTP verification page
-            Navigator.pushNamed(
-              context,
-              Routes.otpVerification,
-              arguments: {
-                'contact': _phoneController.text,
-                'verificationType': 'login',
-                'verificationId': state.verificationId,
-              },
-            );
-          } else if (state is AuthenticationError) {
-            // Show error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: theme.colorScheme.error,
+    return BlocConsumer<AuthenticationBloc, AuthenticationState>(
+      listener: (context, state) {
+        print(state);
+        if (state is LoggedIn) {
+          // Navigate to app shell on successful login
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            Routes.appShell,
+            (route) => false,
+          );
+        } else if (state is OTPSent) {
+          // Navigate to OTP verification page
+          Navigator.pushNamed(
+            context,
+            Routes.otpVerification,
+            arguments: {
+              'contact': _phoneController.text,
+              'verificationType': 'login',
+              'verificationId': state.verificationId,
+            },
+          );
+        } else if (state is AuthenticationError) {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading =
+            state is LoggingIn || state is SendingOTP;
+
+        return Scaffold(
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 32),
+
+              // Logo
+              Icon(
+                Icons.phone_android,
+                size: 80,
+                color: theme.colorScheme.primary,
               ),
-            );
-          }
-        },
-        builder: (context, state) {
-          final isLoading =
-              state is LoggingIn || state is SendingOTP;
+              const SizedBox(height: 24),
 
-          return Scaffold(
-            body: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 32),
+              // Welcome text
+              Text(
+                'Welcome Back',
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Login to your account',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
 
-                // Logo
-                Icon(
-                  Icons.phone_android,
-                  size: 80,
-                  color: theme.colorScheme.primary,
+              // Auth mode toggle
+              AuthModeToggle(
+                selectedMode: _authMode,
+                onModeChanged: (mode) {
+                  setState(() {
+                    _authMode = mode;
+                  });
+                },
+              ),
+              const SizedBox(height: 24),
+
+              // Email/Password mode
+              if (_authMode == AuthMode.email) ...[
+                TextInputField(
+                  controller: _emailController,
+                  label: 'Email',
+                  hintText: 'Enter your email',
+                  keyboardType: TextInputType.emailAddress,
+                  icon: const Icon(Icons.email_outlined),
+                  validator: _validateEmail,
+                ),
+                const SizedBox(height: 16),
+                PasswordInputField(
+                  controller: _passwordController,
+                  labelText: 'Password',
+                  validator: _validatePassword,
+                ),
+                const SizedBox(height: 12),
+
+                // Forgot password link
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, Routes.forgotPassword);
+                    },
+                    child: const Text('Forgot Password?'),
+                  ),
                 ),
                 const SizedBox(height: 24),
 
-                // Welcome text
-                Text(
-                  'Welcome Back',
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                // Login button
+                ElevatedButton(
+                  onPressed: isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Login to your account',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-
-                // Auth mode toggle
-                AuthModeToggle(
-                  selectedMode: _authMode,
-                  onModeChanged: (mode) {
-                    setState(() {
-                      _authMode = mode;
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // Email/Password mode
-                if (_authMode == AuthMode.email) ...[
-                  TextInputField(
-                    controller: _emailController,
-                    label: 'Email',
-                    hintText: 'Enter your email',
-                    keyboardType: TextInputType.emailAddress,
-                    icon: const Icon(Icons.email_outlined),
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 16),
-                  PasswordInputField(
-                    controller: _passwordController,
-                    labelText: 'Password',
-                    validator: _validatePassword,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Forgot password link
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, Routes.forgotPassword);
-                      },
-                      child: const Text('Forgot Password?'),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Login button
-                  ElevatedButton(
-                    onPressed: isLoading ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('Login'),
-                  ),
-                ],
-
-                // Phone/OTP mode
-                if (_authMode == AuthMode.phone) ...[
-                  PhoneInputField(
-                    controller: _phoneController,
-                    validator: _validatePhone,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Send OTP button
-                  ElevatedButton(
-                    onPressed: isLoading ? null : _handlePhoneLogin,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('Send OTP'),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Register link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account? ",
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, Routes.register);
-                      },
-                      child: const Text('Register'),
-                    ),
-                  ],
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Login'),
                 ),
               ],
-            ),
+
+              // Phone/OTP mode
+              if (_authMode == AuthMode.phone) ...[
+                PhoneInputField(
+                  controller: _phoneController,
+                  validator: _validatePhone,
+                ),
+                const SizedBox(height: 24),
+
+                // Send OTP button
+                ElevatedButton(
+                  onPressed: isLoading ? null : _handlePhoneLogin,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Send OTP'),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // Divider
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OR',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Register link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Don't have an account? ",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, Routes.register);
+                    },
+                    child: const Text('Register'),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
-          );
-        },
-      ),
+    ),
+        );
+      },
     );
   }
 }

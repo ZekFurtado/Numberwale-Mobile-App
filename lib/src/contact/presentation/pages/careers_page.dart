@@ -8,10 +8,7 @@ class CareersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<ContactBloc>(),
-      child: const _CareersView(),
-    );
+    return const _CareersView();
   }
 }
 

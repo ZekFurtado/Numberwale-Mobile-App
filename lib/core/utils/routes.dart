@@ -22,6 +22,7 @@ import 'package:numberwale/src/contact/presentation/pages/contact_us_page.dart';
 import 'package:numberwale/src/contact/presentation/pages/careers_page.dart';
 import 'package:numberwale/src/custom_request/presentation/pages/custom_request_page.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
+import 'package:numberwale/src/home/presentation/pages/categories_page.dart';
 
 class Routes {
   // Splash & Onboarding
@@ -38,6 +39,7 @@ class Routes {
   // Main App
   static const String appShell = '/app';
   static const String home = '/home';
+  static const String categories = '/categories';
 
   // Products
   static const String exploreNumbers = '/explore';
@@ -97,6 +99,9 @@ class Routes {
 
         // App Shell
         appShell: (context) => const AppShell(),
+
+        // Categories
+        categories: (context) => const CategoriesPage(),
 
         // Cart
         cart: (context) => const CartPage(),

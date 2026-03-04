@@ -12,10 +12,7 @@ class AccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<ProfileBloc>()..add(const LoadProfileEvent()),
-      child: const _AccountView(),
-    );
+    return const _AccountView();
   }
 }
 

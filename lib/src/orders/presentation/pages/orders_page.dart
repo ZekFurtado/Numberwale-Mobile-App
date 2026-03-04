@@ -12,10 +12,7 @@ class OrdersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<OrderBloc>()..add(const LoadOrdersEvent()),
-      child: const _OrdersView(),
-    );
+    return const _OrdersView();
   }
 }
 

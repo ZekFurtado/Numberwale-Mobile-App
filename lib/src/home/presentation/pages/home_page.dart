@@ -19,6 +19,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
 
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<HomeBloc>().add(LoadHomeDataEvent());
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -318,11 +325,11 @@ class _HomePageState extends State<HomePage> {
         }).toList();
       }
 
-      // Map API categories → CategoryItem objects
+      // Map API categories → CategoryItem objects (limit to 4 for home page)
       if (state.categories.isEmpty) {
-        categories = _getMockCategories(context);
+        categories = _getMockCategories(context).take(4).toList();
       } else {
-        categories = state.categories.map((cat) {
+        categories = state.categories.take(4).map((cat) {
           return CategoryItem(
             title: cat.name,
             icon: _categoryIcon(cat.slug),
@@ -393,7 +400,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       // Initial or refreshing state: show mock data so UI isn't empty
       banners = _getMockPromotionalBanners(context);
-      categories = _getMockCategories(context);
+      categories = _getMockCategories(context).take(4).toList();
       featuredNumbers = _getMockFeaturedNumbers(context);
       latestNumbers = _getMockLatestNumbers(context);
     }
@@ -473,7 +480,7 @@ class _HomePageState extends State<HomePage> {
                     subtitle: 'Find numbers that match your preference',
                     categories: categories,
                     onSeeAllTap: () {
-                      context.read<AppNavigationCubit>().selectTab(1);
+                      Navigator.pushNamed(context, Routes.categories);
                     },
                   ),
                   const SizedBox(height: 32),

@@ -17,12 +17,9 @@ class AddressFormPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<AddressBloc>(),
-      child: _AddressFormView(
-        addressId: addressId,
-        address: address,
-      ),
+    return _AddressFormView(
+      addressId: addressId,
+      address: address,
     );
   }
 }

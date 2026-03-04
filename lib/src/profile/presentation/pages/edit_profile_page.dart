@@ -8,10 +8,7 @@ class EditProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => di.sl<ProfileBloc>()..add(const LoadProfileEvent()),
-      child: const _EditProfileView(),
-    );
+    return const _EditProfileView();
   }
 }
 
@@ -40,6 +37,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
     _mobileController = TextEditingController();
     _companyController = TextEditingController();
     _gstController = TextEditingController();
+    di.sl<ProfileBloc>().add(const LoadProfileEvent());
   }
 
   @override
