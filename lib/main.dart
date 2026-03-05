@@ -5,6 +5,7 @@ import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/utils/theme.dart';
 import 'package:numberwale/src/address/presentation/bloc/address_bloc.dart';
+import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
@@ -39,12 +40,12 @@ class NumberwaleApp extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
-          // Authentication Bloc
-          BlocProvider(
-            create: (_) => di.sl<AuthenticationBloc>(),
-          ),
+          BlocProvider(create: (_) => di.sl<AuthenticationBloc>()),
           BlocProvider(create: (_) => di.sl<HomeBloc>()),
-
+          BlocProvider(create: (_) => di.sl<AppNavigationCubit>()),
+          BlocProvider(create: (_) => di.sl<CartBloc>()),
+          BlocProvider(create: (_) => di.sl<ProfileBloc>()),
+          BlocProvider(create: (_) => di.sl<AddressBloc>()),
         ],
         child: MaterialApp(
           title: 'Numberwale',

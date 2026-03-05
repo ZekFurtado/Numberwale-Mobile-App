@@ -17,19 +17,22 @@ class ProductResultModel extends ProductResult {
 
   factory ProductResultModel.fromMap(DataMap map) {
     final metadata = map['metadata'] as DataMap? ?? {};
-    final data = map['data'] as DataMap? ?? {};
-    final productsRaw = data['products'] as List<dynamic>? ?? [];
+    // Products are at root level: { "metadata": {...}, "products": [...] }
+    final productsRaw = map['products'] as List<dynamic>? ?? [];
+
+    final currentPage = (metadata['currentPage'] as num?)?.toInt() ?? 1;
+    final totalPages = (metadata['totalPages'] as num?)?.toInt() ?? 0;
 
     return ProductResultModel(
       products: productsRaw
           .map((p) => ProductModel.fromMap(p as DataMap))
           .toList(),
       totalCount: (metadata['totalCount'] as num?)?.toInt() ?? 0,
-      currentPage: (metadata['currentPage'] as num?)?.toInt() ?? 1,
-      totalPages: (metadata['totalPages'] as num?)?.toInt() ?? 0,
+      currentPage: currentPage,
+      totalPages: totalPages,
       itemsPerPage: (metadata['itemsPerPage'] as num?)?.toInt() ?? 20,
-      hasNextPage: metadata['hasNextPage'] as bool? ?? false,
-      hasPrevPage: metadata['hasPrevPage'] as bool? ?? false,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1,
       seed: metadata['seed'] as String?,
     );
   }

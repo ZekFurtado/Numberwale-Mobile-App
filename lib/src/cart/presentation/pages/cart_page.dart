@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/cart_item_card.dart';
 import 'package:numberwale/core/widgets/cart_summary_card.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
+
+  @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<CartBloc>().add(const LoadCartEvent());
+  }
 
   @override
   Widget build(BuildContext context) {

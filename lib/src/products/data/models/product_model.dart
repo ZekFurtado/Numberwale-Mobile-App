@@ -78,8 +78,13 @@ class ProductModel extends PhoneNumber {
     final isRTP = rtpValue == 'rtp';
     final isCRTP = rtpValue == 'crtp';
 
-    // Handle features from numerology
-    final numerologyMap = map['numerology'] as DataMap?;
+    // Build numerology map from sub-object or root-level liter/trap/score fields
+    final numerologyMap = <String, dynamic>{
+      ...?(map['numerology'] as DataMap?),
+      if (map['liters'] != null) 'liters': map['liters'],
+      if (map['trap'] != null) 'trap': map['trap'],
+      if (map['score'] != null) 'score': map['score'],
+    };
 
     return ProductModel(
       id: map['_id'] as String? ?? map['id'] as String?,
@@ -97,7 +102,7 @@ class ProductModel extends PhoneNumber {
       features: map['features'] != null
           ? List<String>.from(map['features'] as List<dynamic>)
           : [],
-      numerology: numerologyMap,
+      numerology: numerologyMap.isEmpty ? null : numerologyMap,
       isRTP: isRTP,
       isCRTP: isCRTP,
       isFeatured: map['isFeatured'] as bool? ?? false,

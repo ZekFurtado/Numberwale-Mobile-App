@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/src/app/presentation/pages/app_shell.dart';
+import 'package:numberwale/src/contact/presentation/bloc/contact_bloc.dart';
+import 'package:numberwale/src/custom_request/presentation/bloc/custom_request_bloc.dart';
+import 'package:numberwale/src/numerology/presentation/bloc/numerology_bloc.dart';
+import 'package:numberwale/src/orders/presentation/bloc/order_bloc.dart';
+import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
 import 'package:numberwale/src/splash/presentation/pages/splash_screen.dart';
 import 'package:numberwale/src/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:numberwale/src/authentication/presentation/pages/login_page.dart';
@@ -111,7 +118,10 @@ class Routes {
         addressSelection: (context) => const AddressSelectionPage(),
 
         // Orders
-        orders: (context) => const OrdersPage(),
+        orders: (context) => BlocProvider(
+          create: (_) => di.sl<OrderBloc>(),
+          child: const OrdersPage(),
+        ),
 
         // Addresses
         addresses: (context) => const AddressListPage(),
@@ -121,12 +131,24 @@ class Routes {
         changePassword: (context) => const ChangePasswordPage(),
 
         // Contact & Support
-        contactUs: (context) => const ContactUsPage(),
-        careers: (context) => const CareersPage(),
+        contactUs: (context) => BlocProvider(
+          create: (_) => di.sl<ContactBloc>(),
+          child: const ContactUsPage(),
+        ),
+        careers: (context) => BlocProvider(
+          create: (_) => di.sl<ContactBloc>(),
+          child: const CareersPage(),
+        ),
 
         // Custom Requests
-        customRequest: (context) => const CustomRequestPage(),
-        numerologyConsultation: (context) => const NumerologyPage(),
+        customRequest: (context) => BlocProvider(
+          create: (_) => di.sl<CustomRequestBloc>(),
+          child: const CustomRequestPage(),
+        ),
+        numerologyConsultation: (context) => BlocProvider(
+          create: (_) => di.sl<NumerologyBloc>(),
+          child: const NumerologyPage(),
+        ),
       };
 
   /// Generate routes for dynamic navigation (with parameters)
@@ -140,7 +162,11 @@ class Routes {
       case productDetail:
         if (args is String) {
           return MaterialPageRoute(
-            builder: (_) => ProductDetailPage(phoneNumber: args),
+            builder: (_) => BlocProvider(
+              create: (_) => di.sl<ProductBloc>()
+                ..add(LoadProductByNumberEvent(number: args)),
+              child: ProductDetailPage(phoneNumber: args),
+            ),
             settings: settings,
           );
         }

@@ -90,7 +90,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;
-        final productData = (data['data'] as DataMap)['product'] as DataMap;
+        final productData = data['product'] as DataMap;
         return ProductModel.fromMap(productData);
       } else {
         final errorData = jsonDecode(response.body) as DataMap;

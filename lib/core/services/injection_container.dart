@@ -2,6 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'authenticated_client.dart';
+
 import '../../src/app/presentation/cubit/app_navigation_cubit.dart';
 import '../../src/authentication/data/datasources/auth_local_data_source.dart';
 import '../../src/authentication/data/datasources/auth_remote_data_source.dart';
@@ -281,49 +283,49 @@ Future<void> init() async {
 
     /// Authentication
     ..registerLazySingleton<AuthRemoteDataSource>(
-        () => AuthRemoteDataSourceImpl(sl()))
+        () => AuthRemoteDataSourceImpl(sl<AuthenticatedClient>()))
     ..registerLazySingleton<AuthLocalDataSource>(
         () => AuthLocalDataSourceImpl(sl()))
 
     /// Address
     ..registerLazySingleton<AddressRemoteDataSource>(
-        () => AddressRemoteDataSourceImpl(sl()))
+        () => AddressRemoteDataSourceImpl(sl<AuthenticatedClient>()))
     ..registerLazySingleton<AddressLocalDataSource>(
         () => AddressLocalDataSourceImpl(sl()))
 
     /// Home
     ..registerLazySingleton<HomeRemoteDataSource>(
-        () => HomeRemoteDataSourceImpl(sl()))
+        () => HomeRemoteDataSourceImpl(sl<AuthenticatedClient>()))
     ..registerLazySingleton<HomeLocalDataSource>(
         () => HomeLocalDataSourceImpl(sl()))
 
     /// Products
     ..registerLazySingleton<ProductRemoteDataSource>(
-        () => ProductRemoteDataSourceImpl(sl()))
+        () => ProductRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Cart
     ..registerLazySingleton<CartRemoteDataSource>(
-        () => CartRemoteDataSourceImpl(sl()))
+        () => CartRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Orders
     ..registerLazySingleton<OrderRemoteDataSource>(
-        () => OrderRemoteDataSourceImpl(sl()))
+        () => OrderRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Profile
     ..registerLazySingleton<ProfileRemoteDataSource>(
-        () => ProfileRemoteDataSourceImpl(sl()))
+        () => ProfileRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Numerology
     ..registerLazySingleton<NumerologyRemoteDataSource>(
-        () => NumerologyRemoteDataSourceImpl(sl()))
+        () => NumerologyRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Custom Number Request
     ..registerLazySingleton<CustomRequestRemoteDataSource>(
-        () => CustomRequestRemoteDataSourceImpl(sl()))
+        () => CustomRequestRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Contact
     ..registerLazySingleton<ContactRemoteDataSource>(
-        () => ContactRemoteDataSourceImpl(sl()))
+        () => ContactRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Call Support
 
@@ -331,8 +333,9 @@ Future<void> init() async {
     /// SERVICES
 
     /// EXTERNAL DEPENDENCIES
-    ..registerLazySingleton(http.Client.new)
     ..registerLazySingleton(() => sharedPreferences)
+    ..registerLazySingleton(() => http.Client())
+    ..registerLazySingleton(() => AuthenticatedClient(sl<http.Client>(), sl<SharedPreferences>()))
 
     /// Firebase
    ;

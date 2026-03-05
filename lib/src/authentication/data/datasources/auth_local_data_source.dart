@@ -91,6 +91,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   Future<void> clearCache() async {
     try {
       await sharedPreferences.remove(_cachedUserKey);
+      await sharedPreferences.remove('auth_cookies');
     } on TypeError {
       throw const CacheException(
         statusCode: "501",
