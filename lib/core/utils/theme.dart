@@ -6,7 +6,7 @@ class AppTheme {
   const AppTheme();
 
   // VR Safe Brand Colors - Based on New UI Screenshots
-  static const Color primaryBlue = Color(0xFFFF6B35); // Main orange from Continue button
+  static const Color primaryBlue = Color(0xFFff8401); // Main orange from Continue button
   static const Color gradientBlue = Color(0xFFFF6B35); // Orange gradient for dashboard
   static const Color accentOrange = Color(0xFF6B9EFF); // Orange blue streak/fire/tips
   static const Color streakOrange = Color(0xFF4A90E2); // Fire/streak orange

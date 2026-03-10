@@ -14,6 +14,8 @@ import 'package:provider/provider.dart';
 
 import 'core/common/user_provider.dart';
 
+final _navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -47,19 +49,30 @@ class NumberwaleApp extends StatelessWidget {
           BlocProvider(create: (_) => di.sl<ProfileBloc>()),
           BlocProvider(create: (_) => di.sl<AddressBloc>()),
         ],
-        child: MaterialApp(
-          title: 'Numberwale',
-          debugShowCheckedModeBanner: false,
+        child: BlocListener<AuthenticationBloc, AuthenticationState>(
+          listener: (context, state) {
+            if (state is SignedOut) {
+              _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                Routes.login,
+                (route) => false,
+              );
+            }
+          },
+          child: MaterialApp(
+            title: 'Numberwale',
+            debugShowCheckedModeBanner: false,
+            navigatorKey: _navigatorKey,
 
-          // Theme configuration
-          theme: AppTheme().light(),
-          darkTheme: AppTheme().dark(),
-          themeMode: ThemeMode.light,
+            // Theme configuration
+            theme: AppTheme().light(),
+            darkTheme: AppTheme().dark(),
+            themeMode: ThemeMode.light,
 
-          // Routing
-          initialRoute: Routes.splash,
-          routes: Routes.routes,
-          onGenerateRoute: Routes.generateRoute,
+            // Routing
+            initialRoute: Routes.splash,
+            routes: Routes.routes,
+            onGenerateRoute: Routes.generateRoute,
+          ),
         ),
       ),
     );

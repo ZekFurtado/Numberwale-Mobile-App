@@ -43,22 +43,18 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // Check if user has completed onboarding
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedOnboarding =
         prefs.getBool('has_completed_onboarding') ?? false;
-
-    // Check if user is logged in
-    // final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    final isLoggedIn = prefs.getString('CACHED_USER') != null;
 
     if (!mounted) return;
 
-    // Navigate based on state
     if (!hasCompletedOnboarding) {
-      // Show onboarding
       Navigator.pushReplacementNamed(context, Routes.onboarding);
+    } else if (!isLoggedIn) {
+      Navigator.pushReplacementNamed(context, Routes.login);
     } else {
-      // Go directly to app shell (will show login if needed)
       Navigator.pushReplacementNamed(context, Routes.appShell);
     }
   }

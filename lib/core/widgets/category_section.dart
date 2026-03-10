@@ -112,6 +112,7 @@ class _CategoryCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               // Icon
@@ -142,7 +143,7 @@ class _CategoryCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (category.count != null) ...[
+                  /*if (category.count != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       '${category.count} numbers',
@@ -150,7 +151,7 @@ class _CategoryCard extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  ],
+                  ],*/
                 ],
               ),
             ],

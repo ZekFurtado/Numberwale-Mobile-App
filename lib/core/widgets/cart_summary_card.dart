@@ -7,6 +7,7 @@ class CartSummaryCard extends StatelessWidget {
     this.discount = 0,
     this.cgst,
     this.sgst,
+    this.totalAmount,
   });
 
   final double subtotal;
@@ -14,7 +15,11 @@ class CartSummaryCard extends StatelessWidget {
   final double? cgst;
   final double? sgst;
 
-  double get _gstRate => 0.18; // 18% GST
+  /// The authoritative total from the API. When provided, it is shown
+  /// directly instead of recomputing subtotal + taxes.
+  final double? totalAmount;
+
+  double get _gstRate => 0.18;
 
   double get _discountAmount => (subtotal * discount) / 100;
 
@@ -26,7 +31,7 @@ class CartSummaryCard extends StatelessWidget {
 
   double get _totalGst => _cgstAmount + _sgstAmount;
 
-  double get _grandTotal => _subtotalAfterDiscount + _totalGst;
+  double get _grandTotal => totalAmount ?? (_subtotalAfterDiscount + _totalGst);
 
   String _formatPrice(double price) {
     if (price >= 100000) {

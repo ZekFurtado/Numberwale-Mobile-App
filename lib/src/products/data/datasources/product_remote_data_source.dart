@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -26,7 +27,9 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       final uri = Uri.parse(BackendConfig.getProductsUrl)
           .replace(queryParameters: filters.toQueryParams());
 
+      log('[ProductDS] GET $uri');
       final response = await _client.get(uri, headers: BackendConfig.headers);
+      log('[ProductDS] status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 300))}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;

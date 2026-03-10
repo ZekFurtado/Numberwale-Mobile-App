@@ -204,6 +204,7 @@ class _CartView extends StatelessWidget {
                                   discount: 0,
                                   cgst: cart.cgst,
                                   sgst: cart.sgst,
+                                  totalAmount: cart.totalAmount,
                                 ),
 
                                 const SizedBox(height: 16),

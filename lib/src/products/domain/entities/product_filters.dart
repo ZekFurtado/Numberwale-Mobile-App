@@ -63,8 +63,13 @@ class ProductFilters extends Equatable {
     };
     if (search != null && search!.isNotEmpty) params['search'] = search!;
     if (category != null) params['category'] = category!;
-    if (minPrice != null) params['minPrice'] = minPrice!.toInt().toString();
-    if (maxPrice != null) params['maxPrice'] = maxPrice!.toInt().toString();
+    if (minPrice != null && maxPrice != null) {
+      params['priceRange'] = '${minPrice!.toInt()}-${maxPrice!.toInt()}';
+    } else if (minPrice != null) {
+      params['minPrice'] = minPrice!.toInt().toString();
+    } else if (maxPrice != null) {
+      params['maxPrice'] = maxPrice!.toInt().toString();
+    }
     if (sortBy != null) params['sortBy'] = sortBy!;
     if (sortPrice != null) params['sortPrice'] = sortPrice!;
     if (readyToPort != null) params['readyToPort'] = readyToPort!;

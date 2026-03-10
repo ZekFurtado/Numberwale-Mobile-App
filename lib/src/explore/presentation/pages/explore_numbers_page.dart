@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/models/filter_models.dart';
@@ -21,6 +23,7 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   NumberFilters _uiFilters = const NumberFilters();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -150,7 +154,11 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _uiFilters = _uiFilters.copyWith(searchQuery: ''));
-                                context.read<ProductBloc>().add(const SearchProductsEvent(query: ''));
+                                context.read<ProductBloc>().add(
+                                      ApplyFiltersEvent(
+                                        filters: _toProductFilters(),
+                                      ),
+                                    );
                               },
                             )
                           : null,
@@ -165,7 +173,14 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
                       setState(() => _uiFilters = _uiFilters.copyWith(searchQuery: value));
-                      context.read<ProductBloc>().add(SearchProductsEvent(query: value));
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+                        context.read<ProductBloc>().add(
+                              ApplyFiltersEvent(
+                                filters: _toProductFilters(),
+                              ),
+                            );
+                      });
                     },
                   ),
                 ),
