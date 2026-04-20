@@ -12,6 +12,8 @@ class CheckoutResultModel extends CheckoutResult {
     required super.currency,
     required super.gateway,
     super.paymentUrl,
+    super.phonePeBody,
+    super.phonePeChecksum,
   });
 
   /// Creates a CheckoutResultModel from a Map
@@ -31,6 +33,8 @@ class CheckoutResultModel extends CheckoutResult {
       currency: data['currency'] as String? ?? 'INR',
       gateway: data['gateway'] as String? ?? '',
       paymentUrl: data['paymentUrl'] as String? ?? data['payment_url'] as String?,
+      phonePeBody: data['phonePeBody'] as String? ?? data['phonepe_body'] as String?,
+      phonePeChecksum: data['phonePeChecksum'] as String? ?? data['phonepe_checksum'] as String?,
     );
   }
 }

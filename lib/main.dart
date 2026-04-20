@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
+import 'package:numberwale/core/services/phonepe_service.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/utils/theme.dart';
 import 'package:numberwale/src/address/presentation/bloc/address_bloc.dart';
@@ -27,6 +28,9 @@ void main() async {
 
   // Initialize dependency injection
   await di.init();
+
+  // Initialize PhonePe SDK
+  await PhonePeService.init();
 
   runApp(const NumberwaleApp());
 }

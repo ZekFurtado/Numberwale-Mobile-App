@@ -266,13 +266,13 @@ class _AddressFormViewState extends State<_AddressFormView> {
 
                 const SizedBox(height: 16),
 
-                // City (auto-filled)
+                // City
                 TextInputField(
                   controller: _cityController,
                   label: 'City',
-                  hintText: 'Auto-filled from PIN code',
+                  hintText: 'Enter city',
                   icon: const Icon(Icons.location_city),
-                  enabled: false,
+                  enabled: !isLoading,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'City is required';
@@ -283,13 +283,13 @@ class _AddressFormViewState extends State<_AddressFormView> {
 
                 const SizedBox(height: 16),
 
-                // State (auto-filled)
+                // State
                 TextInputField(
                   controller: _stateController,
                   label: 'State',
-                  hintText: 'Auto-filled from PIN code',
+                  hintText: 'Enter state',
                   icon: const Icon(Icons.map),
-                  enabled: false,
+                  enabled: !isLoading,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'State is required';

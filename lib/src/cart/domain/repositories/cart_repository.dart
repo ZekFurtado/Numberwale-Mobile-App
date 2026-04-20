@@ -12,7 +12,7 @@ abstract class CartRepository {
   ResultFuture<Cart> getCart();
 
   /// Adds a product to the cart by product ID
-  ResultFuture<Cart> addToCart(String productId);
+  ResultFuture<Cart> addToCart(String productId, String productNumber, double price);
 
   /// Removes a specific item from the cart by item ID
   ResultVoid removeCartItem(String itemId);
@@ -29,10 +29,16 @@ abstract class CartRepository {
   /// Initiates checkout with the given address and payment gateway
   ResultFuture<CheckoutResult> checkout(String addressId, String paymentGateway);
 
-  /// Confirms a payment after successful gateway transaction
+  /// Confirms a payment after successful gateway transaction.
+  /// [signature] is required for Razorpay payment verification.
   ResultFuture<DataMap> confirmPayment(
-      String paymentId, String orderId, String gateway);
+      String paymentId, String orderId, String gateway,
+      {String? signature});
 
   /// Fetches available payment gateways
   ResultFuture<List<PaymentGateway>> getPaymentGateways();
+
+  /// Verifies a PhonePe payment with the backend
+  ResultFuture<DataMap> verifyPhonePePayment(
+      String transactionId, String orderId);
 }

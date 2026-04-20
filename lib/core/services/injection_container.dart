@@ -56,6 +56,9 @@ import '../../src/cart/domain/usecases/confirm_payment.dart';
 import '../../src/cart/domain/usecases/get_cart.dart';
 import '../../src/cart/domain/usecases/get_payment_gateways.dart';
 import '../../src/cart/domain/usecases/remove_cart_item.dart';
+import '../../src/cart/domain/usecases/verify_phonepe_payment.dart';
+import 'phonepe_service.dart';
+import 'razorpay_service.dart';
 import '../../src/cart/presentation/bloc/cart_bloc.dart';
 import '../../src/orders/data/datasources/order_remote_data_source.dart';
 import '../../src/orders/data/repositories/order_repository_impl.dart';
@@ -146,6 +149,7 @@ Future<void> init() async {
         checkout: sl(),
         confirmPayment: sl(),
         getPaymentGateways: sl(),
+        verifyPhonePePayment: sl(),
     ))
 
     /// Orders
@@ -215,6 +219,7 @@ Future<void> init() async {
     ..registerLazySingleton(() => Checkout(sl()))
     ..registerLazySingleton(() => ConfirmPayment(sl()))
     ..registerLazySingleton(() => GetPaymentGateways(sl()))
+    ..registerLazySingleton(() => VerifyPhonePePayment(sl()))
 
     /// Orders
     ..registerLazySingleton(() => GetOrders(sl()))
@@ -256,7 +261,7 @@ Future<void> init() async {
 
     /// Cart
     ..registerLazySingleton<CartRepository>(
-        () => CartRepositoryImpl(sl()))
+        () => CartRepositoryImpl(sl(), sl<SharedPreferences>()))
 
     /// Orders
     ..registerLazySingleton<OrderRepository>(
@@ -331,6 +336,8 @@ Future<void> init() async {
 
 
     /// SERVICES
+    ..registerLazySingleton(() => PhonePeService())
+    ..registerFactory(() => RazorpayService())
 
     /// EXTERNAL DEPENDENCIES
     ..registerLazySingleton(() => sharedPreferences)

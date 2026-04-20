@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -14,8 +15,9 @@ abstract class CartRemoteDataSource {
   /// Fetches the current cart from the API
   Future<CartModel> getCart();
 
-  /// Adds a product to the cart by product ID
-  Future<CartModel> addToCart(String productId);
+  /// Adds a product to the cart by product ID.
+  /// Returns the raw product DataMap from the API response.
+  Future<DataMap> addToCart(String productId);
 
   /// Removes a specific item from the cart by item ID
   Future<void> removeCartItem(String itemId);
@@ -32,12 +34,17 @@ abstract class CartRemoteDataSource {
   /// Initiates checkout with the given address and payment gateway
   Future<CheckoutResultModel> checkout(String addressId, String paymentGateway);
 
-  /// Confirms a payment after successful gateway transaction
+  /// Confirms a payment after successful gateway transaction.
+  /// [signature] is required for Razorpay payment verification.
   Future<DataMap> confirmPayment(
-      String paymentId, String orderId, String gateway);
+      String paymentId, String orderId, String gateway,
+      {String? signature});
 
   /// Fetches available payment gateways
   Future<List<PaymentGatewayModel>> getPaymentGateways();
+
+  /// Verifies a PhonePe payment with the backend
+  Future<DataMap> verifyPhonePePayment(String transactionId, String orderId);
 }
 
 /// Implementation of CartRemoteDataSource that makes actual API calls
@@ -54,6 +61,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         headers: BackendConfig.headers,
       );
 
+      log('getCart status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200) {
         final DataMap responseBody =
             jsonDecode(response.body) as DataMap;
@@ -81,18 +89,18 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   }
 
   @override
-  Future<CartModel> addToCart(String productId) async {
+  Future<DataMap> addToCart(String productId) async {
     try {
       final response = await _client.post(
         Uri.parse(BackendConfig.addToCartUrl(productId)),
         headers: BackendConfig.headers,
       );
-
+      log('addToCart status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final DataMap responseBody =
             jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
-        return CartModel.fromMap(data);
+        return data['product'] as DataMap? ?? data;
       } else {
         throw ServerException(
           message: 'Failed to add item to cart',
@@ -284,12 +292,14 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
   @override
   Future<DataMap> confirmPayment(
-      String paymentId, String orderId, String gateway) async {
+      String paymentId, String orderId, String gateway,
+      {String? signature}) async {
     try {
-      final body = {
+      final body = <String, dynamic>{
         'paymentId': paymentId,
         'orderId': orderId,
         'gateway': gateway,
+        if (signature != null) 'signature': signature,
       };
 
       final response = await _client.post(
@@ -342,6 +352,44 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       } else {
         throw ServerException(
           message: 'Failed to fetch payment gateways',
+          statusCode: response.statusCode.toString(),
+        );
+      }
+    } on SocketException {
+      throw const NetworkException(
+        statusCode: '503',
+        message: 'No internet connection',
+      );
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(
+        message: e.toString(),
+        statusCode: '500',
+      );
+    }
+  }
+
+  @override
+  Future<DataMap> verifyPhonePePayment(
+      String transactionId, String orderId) async {
+    try {
+      final body = {
+        'transactionId': transactionId,
+        'orderId': orderId,
+      };
+
+      final response = await _client.post(
+        Uri.parse(BackendConfig.verifyPhonePeUrl),
+        headers: BackendConfig.headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as DataMap;
+      } else {
+        throw ServerException(
+          message: 'Failed to verify PhonePe payment',
           statusCode: response.statusCode.toString(),
         );
       }

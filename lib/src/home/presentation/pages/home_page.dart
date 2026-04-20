@@ -362,9 +362,11 @@ class _HomePageState extends State<HomePage> {
               );
             },
             onAddToCart: () {
-              context.read<CartBloc>().add(
-                    AddToCartEvent(productId: pn.id ?? pn.number),
-                  );
+              context.read<CartBloc>().add(AddToCartEvent(
+                    productId: pn.id ?? pn.number,
+                    productNumber: pn.number,
+                    price: pn.price,
+                  ));
             },
           );
         }).toList();
@@ -390,9 +392,11 @@ class _HomePageState extends State<HomePage> {
               );
             },
             onAddToCart: () {
-              context.read<CartBloc>().add(
-                    AddToCartEvent(productId: pn.id ?? pn.number),
-                  );
+              context.read<CartBloc>().add(AddToCartEvent(
+                    productId: pn.id ?? pn.number,
+                    productNumber: pn.number,
+                    price: pn.price,
+                  ));
             },
           );
         }).toList();

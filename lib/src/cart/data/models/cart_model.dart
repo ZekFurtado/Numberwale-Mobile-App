@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:numberwale/core/utils/typedef.dart';
 import 'package:numberwale/src/cart/data/models/cart_item_model.dart';
 import 'package:numberwale/src/cart/domain/entities/cart.dart';
@@ -19,29 +21,64 @@ class CartModel extends Cart {
 
   /// Creates a CartModel from a Map
   factory CartModel.fromMap(DataMap map) {
-    // The cart may be wrapped under a 'cart' key inside 'data'
-    final cartData = map['cart'] as DataMap? ?? map;
+    // ignore: avoid_print
+    print('CartModel.fromMap top-level keys: ${map.keys.toList()}');
 
-    final rawItems = cartData['items'] as List<dynamic>? ?? [];
+    // Handle various nesting: { cart: {...} }, { data: { cart: {...} } }, or flat
+    DataMap cartData = map;
+    if (map['cart'] is DataMap) {
+      cartData = map['cart'] as DataMap;
+    } else if (map['data'] is DataMap) {
+      final inner = map['data'] as DataMap;
+      cartData = inner['cart'] is DataMap ? inner['cart'] as DataMap : inner;
+    }
+    // ignore: avoid_print
+    print('CartModel cartData keys: ${cartData.keys.toList()}');
+
+    // Try every plausible key name for the items array
+    final rawItems = (cartData['items']
+        ?? cartData['cartItems']
+        ?? cartData['cart_items']
+        ?? cartData['products']
+        ?? cartData['lineItems']) as List<dynamic>? ?? [];
+    // ignore: avoid_print
+    print('CartModel rawItems count: ${rawItems.length}');
     final items = rawItems
         .map((item) => CartItemModel.fromMap(item as DataMap))
         .toList();
 
     final gst = cartData['gst'] as DataMap?;
+    final tax = cartData['tax'] as DataMap?;
+
+    double toDouble(dynamic v) => (v as num? ?? 0).toDouble();
 
     return CartModel(
-      id: cartData['_id'] as String? ?? cartData['id'] as String?,
+      id: cartData['_id'] as String?
+          ?? cartData['id'] as String?
+          ?? cartData['cartId'] as String?,
       items: items,
-      totalAmount: (cartData['totalAmount'] as num? ?? 0).toDouble(),
-      itemCount: (cartData['itemCount'] as num? ?? items.length).toInt(),
-      subtotal: (cartData['subtotal'] as num? ?? 0).toDouble(),
-      taxAmount: (cartData['taxAmount'] as num? ?? 0).toDouble(),
+      totalAmount: toDouble(cartData['totalAmount']
+          ?? cartData['total_amount']
+          ?? cartData['total']),
+      itemCount: (cartData['itemCount'] as num?
+          ?? cartData['item_count'] as num?
+          ?? items.length).toInt(),
+      subtotal: toDouble(cartData['subtotal']
+          ?? cartData['subTotal']
+          ?? cartData['sub_total']),
+      taxAmount: toDouble(cartData['taxAmount']
+          ?? cartData['tax_amount']
+          ?? cartData['totalTax']),
       cgst: gst != null
-          ? (gst['cgst'] as num? ?? 0).toDouble()
-          : (cartData['cgst'] as num? ?? 0).toDouble(),
+          ? toDouble(gst['cgst'])
+          : tax != null
+              ? toDouble(tax['cgst'])
+              : toDouble(cartData['cgst']),
       sgst: gst != null
-          ? (gst['sgst'] as num? ?? 0).toDouble()
-          : (cartData['sgst'] as num? ?? 0).toDouble(),
+          ? toDouble(gst['sgst'])
+          : tax != null
+              ? toDouble(tax['sgst'])
+              : toDouble(cartData['sgst']),
     );
   }
 

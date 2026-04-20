@@ -32,11 +32,20 @@ class LocationInfoModel extends LocationInfo {
   /// Creates a LocationInfoModel from a Map
   factory LocationInfoModel.fromMap(DataMap map) {
     return LocationInfoModel(
-      pinCode: map['pinCode'] as String? ?? map['pin_code'] as String? ?? map['pincode'] as String,
-      city: map['city'] as String,
-      state: map['state'] as String,
-      district: map['district'] as String?,
-      country: map['country'] as String? ?? 'India',
+      pinCode: map['pinCode'] as String?
+          ?? map['pin_code'] as String?
+          ?? map['pincode'] as String?
+          ?? '',
+      city: map['city'] as String?
+          ?? map['City'] as String?
+          ?? map['taluk'] as String?
+          ?? '',
+      state: map['state'] as String?
+          ?? map['State'] as String?
+          ?? map['stateName'] as String?
+          ?? '',
+      district: map['district'] as String? ?? map['District'] as String?,
+      country: map['country'] as String? ?? map['Country'] as String? ?? 'India',
     );
   }
 

@@ -164,9 +164,11 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
                     ),
                     onAddToCart: () {
                       if (pn.id != null) {
-                        context
-                            .read<CartBloc>()
-                            .add(AddToCartEvent(productId: pn.id!));
+                        context.read<CartBloc>().add(AddToCartEvent(
+                              productId: pn.id!,
+                              productNumber: pn.number,
+                              price: pn.price,
+                            ));
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                               content: Text('${pn.number} added to cart')),

@@ -91,3 +91,13 @@ class PaymentGatewaysLoaded extends CartState {
   @override
   List<Object> get props => [gateways];
 }
+
+/// PhonePe payment verification is in progress
+class VerifyingPhonePePayment extends CartState {
+  const VerifyingPhonePePayment();
+}
+
+/// PhonePe payment verified successfully
+class PhonePePaymentVerified extends CartState {
+  const PhonePePaymentVerified();
+}

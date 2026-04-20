@@ -10,6 +10,7 @@ import 'package:numberwale/src/cart/domain/usecases/confirm_payment.dart';
 import 'package:numberwale/src/cart/domain/usecases/get_cart.dart';
 import 'package:numberwale/src/cart/domain/usecases/get_payment_gateways.dart';
 import 'package:numberwale/src/cart/domain/usecases/remove_cart_item.dart';
+import 'package:numberwale/src/cart/domain/usecases/verify_phonepe_payment.dart';
 
 part 'cart_event.dart';
 part 'cart_state.dart';
@@ -23,6 +24,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     required Checkout checkout,
     required ConfirmPayment confirmPayment,
     required GetPaymentGateways getPaymentGateways,
+    required VerifyPhonePePayment verifyPhonePePayment,
   })  : _getCart = getCart,
         _addToCart = addToCart,
         _removeCartItem = removeCartItem,
@@ -30,6 +32,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         _checkout = checkout,
         _confirmPayment = confirmPayment,
         _getPaymentGateways = getPaymentGateways,
+        _verifyPhonePePayment = verifyPhonePePayment,
         super(const CartInitial()) {
     on<LoadCartEvent>(_loadCartHandler);
     on<AddToCartEvent>(_addToCartHandler);
@@ -38,6 +41,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     on<CheckoutEvent>(_checkoutHandler);
     on<ConfirmPaymentEvent>(_confirmPaymentHandler);
     on<GetPaymentGatewaysEvent>(_getPaymentGatewaysHandler);
+    on<VerifyPhonePePaymentEvent>(_verifyPhonePePaymentHandler);
   }
 
   final GetCart _getCart;
@@ -47,6 +51,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   final Checkout _checkout;
   final ConfirmPayment _confirmPayment;
   final GetPaymentGateways _getPaymentGateways;
+  final VerifyPhonePePayment _verifyPhonePePayment;
 
   Future<void> _loadCartHandler(
     LoadCartEvent event,
@@ -69,7 +74,11 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     emit(const AddingToCart());
 
     final result = await _addToCart(
-      AddToCartParams(productId: event.productId),
+      AddToCartParams(
+        productId: event.productId,
+        productNumber: event.productNumber,
+        price: event.price,
+      ),
     );
 
     result.fold(
@@ -134,6 +143,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         paymentId: event.paymentId,
         orderId: event.orderId,
         gateway: event.gateway,
+        signature: event.signature,
       ),
     );
 
@@ -154,6 +164,25 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     result.fold(
       (failure) => emit(CartError(message: failure.message)),
       (gateways) => emit(PaymentGatewaysLoaded(gateways: gateways)),
+    );
+  }
+
+  Future<void> _verifyPhonePePaymentHandler(
+    VerifyPhonePePaymentEvent event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(const VerifyingPhonePePayment());
+
+    final result = await _verifyPhonePePayment(
+      VerifyPhonePePaymentParams(
+        transactionId: event.transactionId,
+        orderId: event.orderId,
+      ),
+    );
+
+    result.fold(
+      (failure) => emit(CartError(message: failure.message)),
+      (_) => emit(const PhonePePaymentVerified()),
     );
   }
 }

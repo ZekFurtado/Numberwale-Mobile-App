@@ -20,6 +20,12 @@ class CheckoutResult extends Equatable {
   /// Optional payment URL — used by PhonePe redirect flow
   final String? paymentUrl;
 
+  /// Base64-encoded JSON payload for the PhonePe SDK (backend-generated).
+  final String? phonePeBody;
+
+  /// SHA-256 checksum for the PhonePe SDK (backend-generated).
+  final String? phonePeChecksum;
+
   const CheckoutResult({
     required this.orderId,
     required this.orderNumber,
@@ -27,6 +33,8 @@ class CheckoutResult extends Equatable {
     required this.currency,
     required this.gateway,
     this.paymentUrl,
+    this.phonePeBody,
+    this.phonePeChecksum,
   });
 
   @override

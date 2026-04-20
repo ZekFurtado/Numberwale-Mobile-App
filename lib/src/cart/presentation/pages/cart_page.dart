@@ -162,12 +162,10 @@ class _CartView extends StatelessWidget {
                               category: '',
                               discount: null,
                               onRemove: () {
-                                if (item.id != null) {
-                                  context.read<CartBloc>().add(
-                                        RemoveCartItemEvent(
-                                            itemId: item.id!),
-                                      );
-                                }
+                                context.read<CartBloc>().add(
+                                      RemoveCartItemEvent(
+                                          itemId: item.id ?? item.productId),
+                                    );
                               },
                               onTap: () {
                                 Navigator.pushNamed(

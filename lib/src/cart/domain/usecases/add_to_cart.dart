@@ -16,16 +16,26 @@ class AddToCart extends UseCaseWithParams<Cart, AddToCartParams> {
 
   @override
   ResultFuture<Cart> call(AddToCartParams params) {
-    return repository.addToCart(params.productId);
+    return repository.addToCart(
+      params.productId,
+      params.productNumber,
+      params.price,
+    );
   }
 }
 
 /// Parameters for adding a product to the cart
 class AddToCartParams extends Equatable {
   final String productId;
+  final String productNumber;
+  final double price;
 
-  const AddToCartParams({required this.productId});
+  const AddToCartParams({
+    required this.productId,
+    required this.productNumber,
+    required this.price,
+  });
 
   @override
-  List<Object?> get props => [productId];
+  List<Object?> get props => [productId, productNumber, price];
 }

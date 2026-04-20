@@ -60,12 +60,21 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-        return data
-            .map((json) => AddressModel.fromMap(json as Map<String, dynamic>))
+        final decoded = jsonDecode(response.body);
+        List<dynamic> list;
+        if (decoded is List) {
+          list = decoded;
+        } else if (decoded is Map<String, dynamic>) {
+          list = (decoded['data'] as List<dynamic>?)
+              ?? (decoded['addresses'] as List<dynamic>?)
+              ?? [];
+        } else {
+          list = [];
+        }
+        return list
+            .map((json) => AddressModel.fromMap(_normalise(json as Map<String, dynamic>)))
             .toList();
       } else if (response.statusCode == 404) {
-        // No addresses found, return empty list
         return [];
       } else {
         throw ServerException(
@@ -86,6 +95,14 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
         statusCode: '500',
       );
     }
+  }
+
+  /// Normalises a raw address map from the API: converts `_id` → `id`.
+  Map<String, dynamic> _normalise(Map<String, dynamic> map) {
+    if (!map.containsKey('id') && map.containsKey('_id')) {
+      return {...map, 'id': map['_id']};
+    }
+    return map;
   }
 
   @override
@@ -116,8 +133,11 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        return AddressModel.fromMap(data);
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final raw = decoded['data'] as Map<String, dynamic>?
+            ?? decoded['address'] as Map<String, dynamic>?
+            ?? decoded;
+        return AddressModel.fromMap(_normalise(raw));
       } else {
         throw ServerException(
           message: 'Failed to add address',
@@ -167,8 +187,11 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        return AddressModel.fromMap(data);
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final raw = decoded['data'] as Map<String, dynamic>?
+            ?? decoded['address'] as Map<String, dynamic>?
+            ?? decoded;
+        return AddressModel.fromMap(_normalise(raw));
       } else {
         throw ServerException(
           message: 'Failed to update address',
@@ -222,9 +245,10 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
   @override
   Future<void> setPrimaryAddress({required String addressId}) async {
     try {
-      final response = await _client.patch(
-        Uri.parse(BackendConfig.setPrimaryAddressUrl(addressId)),
+      final response = await _client.put(
+        Uri.parse(BackendConfig.updateAddressUrl(addressId)),
         headers: BackendConfig.headers,
+        body: jsonEncode({'isPrimary': true}),
       );
 
       if (response.statusCode != 200) {
@@ -259,7 +283,10 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final data = decoded['data'] as Map<String, dynamic>?
+            ?? decoded['result'] as Map<String, dynamic>?
+            ?? decoded;
         return LocationInfoModel.fromMap(data);
       } else if (response.statusCode == 404) {
         throw ServerException(

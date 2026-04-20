@@ -21,6 +21,7 @@ class ConfirmPayment
       params.paymentId,
       params.orderId,
       params.gateway,
+      signature: params.signature,
     );
   }
 }
@@ -31,12 +32,16 @@ class ConfirmPaymentParams extends Equatable {
   final String orderId;
   final String gateway;
 
+  /// Optional payment signature — required for Razorpay verification.
+  final String? signature;
+
   const ConfirmPaymentParams({
     required this.paymentId,
     required this.orderId,
     required this.gateway,
+    this.signature,
   });
 
   @override
-  List<Object?> get props => [paymentId, orderId, gateway];
+  List<Object?> get props => [paymentId, orderId, gateway, signature];
 }
