@@ -2,15 +2,11 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:numberwale/src/cart/domain/entities/cart.dart';
 import 'package:numberwale/src/cart/domain/entities/checkout_result.dart';
-import 'package:numberwale/src/cart/domain/entities/payment_gateway.dart';
 import 'package:numberwale/src/cart/domain/usecases/add_to_cart.dart';
 import 'package:numberwale/src/cart/domain/usecases/checkout.dart';
 import 'package:numberwale/src/cart/domain/usecases/clear_cart.dart';
-import 'package:numberwale/src/cart/domain/usecases/confirm_payment.dart';
 import 'package:numberwale/src/cart/domain/usecases/get_cart.dart';
-import 'package:numberwale/src/cart/domain/usecases/get_payment_gateways.dart';
 import 'package:numberwale/src/cart/domain/usecases/remove_cart_item.dart';
-import 'package:numberwale/src/cart/domain/usecases/verify_phonepe_payment.dart';
 
 part 'cart_event.dart';
 part 'cart_state.dart';
@@ -22,26 +18,17 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     required RemoveCartItem removeCartItem,
     required ClearCart clearCart,
     required Checkout checkout,
-    required ConfirmPayment confirmPayment,
-    required GetPaymentGateways getPaymentGateways,
-    required VerifyPhonePePayment verifyPhonePePayment,
   })  : _getCart = getCart,
         _addToCart = addToCart,
         _removeCartItem = removeCartItem,
         _clearCart = clearCart,
         _checkout = checkout,
-        _confirmPayment = confirmPayment,
-        _getPaymentGateways = getPaymentGateways,
-        _verifyPhonePePayment = verifyPhonePePayment,
         super(const CartInitial()) {
     on<LoadCartEvent>(_loadCartHandler);
     on<AddToCartEvent>(_addToCartHandler);
     on<RemoveCartItemEvent>(_removeCartItemHandler);
     on<ClearCartEvent>(_clearCartHandler);
     on<CheckoutEvent>(_checkoutHandler);
-    on<ConfirmPaymentEvent>(_confirmPaymentHandler);
-    on<GetPaymentGatewaysEvent>(_getPaymentGatewaysHandler);
-    on<VerifyPhonePePaymentEvent>(_verifyPhonePePaymentHandler);
   }
 
   final GetCart _getCart;
@@ -49,9 +36,6 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   final RemoveCartItem _removeCartItem;
   final ClearCart _clearCart;
   final Checkout _checkout;
-  final ConfirmPayment _confirmPayment;
-  final GetPaymentGateways _getPaymentGateways;
-  final VerifyPhonePePayment _verifyPhonePePayment;
 
   Future<void> _loadCartHandler(
     LoadCartEvent event,
@@ -120,69 +104,12 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     emit(const CheckingOut());
 
     final result = await _checkout(
-      CheckoutParams(
-        addressId: event.addressId,
-        paymentGateway: event.paymentGateway,
-      ),
+      CheckoutParams(addressId: event.addressId),
     );
 
     result.fold(
       (failure) => emit(CartError(message: failure.message)),
-      (checkoutResult) => emit(CheckoutInitiated(result: checkoutResult)),
-    );
-  }
-
-  Future<void> _confirmPaymentHandler(
-    ConfirmPaymentEvent event,
-    Emitter<CartState> emit,
-  ) async {
-    emit(const ConfirmingPayment());
-
-    final result = await _confirmPayment(
-      ConfirmPaymentParams(
-        paymentId: event.paymentId,
-        orderId: event.orderId,
-        gateway: event.gateway,
-        signature: event.signature,
-      ),
-    );
-
-    result.fold(
-      (failure) => emit(CartError(message: failure.message)),
-      (_) => emit(const PaymentConfirmed()),
-    );
-  }
-
-  Future<void> _getPaymentGatewaysHandler(
-    GetPaymentGatewaysEvent event,
-    Emitter<CartState> emit,
-  ) async {
-    emit(const LoadingPaymentGateways());
-
-    final result = await _getPaymentGateways();
-
-    result.fold(
-      (failure) => emit(CartError(message: failure.message)),
-      (gateways) => emit(PaymentGatewaysLoaded(gateways: gateways)),
-    );
-  }
-
-  Future<void> _verifyPhonePePaymentHandler(
-    VerifyPhonePePaymentEvent event,
-    Emitter<CartState> emit,
-  ) async {
-    emit(const VerifyingPhonePePayment());
-
-    final result = await _verifyPhonePePayment(
-      VerifyPhonePePaymentParams(
-        transactionId: event.transactionId,
-        orderId: event.orderId,
-      ),
-    );
-
-    result.fold(
-      (failure) => emit(CartError(message: failure.message)),
-      (_) => emit(const PhonePePaymentVerified()),
+      (checkoutResult) => emit(CheckoutComplete(result: checkoutResult)),
     );
   }
 }

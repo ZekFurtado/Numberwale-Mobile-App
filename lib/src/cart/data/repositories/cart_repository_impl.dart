@@ -10,12 +10,9 @@ import 'package:numberwale/src/cart/data/models/cart_item_model.dart';
 import 'package:numberwale/src/cart/data/models/cart_model.dart';
 import 'package:numberwale/src/cart/domain/entities/cart.dart';
 import 'package:numberwale/src/cart/domain/entities/checkout_result.dart';
-import 'package:numberwale/src/cart/domain/entities/payment_gateway.dart';
 import 'package:numberwale/src/cart/domain/repositories/cart_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Implementation of CartRepository.
-///
 /// The backend cart is localStorage-based (web). The server-side cart always
 /// returns empty items. Mobile maintains a persisted local cart (SharedPreferences)
 /// and syncs it to the server right before checkout.
@@ -30,8 +27,6 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   final List<CartItemModel> _localItems = [];
-
-  // ── persistence ───────────────────────────────────────────────────────────
 
   void _loadFromPrefs() {
     try {
@@ -56,8 +51,6 @@ class CartRepositoryImpl implements CartRepository {
     }
   }
 
-  // ── helpers ──────────────────────────────────────────────────────────────
-
   CartModel _buildLocalCart() {
     final subtotal = _localItems.fold<double>(
         0, (sum, item) => sum + item.price * item.quantity);
@@ -78,8 +71,6 @@ class CartRepositoryImpl implements CartRepository {
     );
   }
 
-  // ── repository methods ────────────────────────────────────────────────────
-
   @override
   ResultFuture<Cart> getCart() async {
     return Right(_buildLocalCart());
@@ -90,8 +81,7 @@ class CartRepositoryImpl implements CartRepository {
     try {
       await remoteDataSource.addToCart(productId);
 
-      final existingIndex =
-          _localItems.indexWhere((i) => i.productId == productId);
+      final existingIndex = _localItems.indexWhere((i) => i.productId == productId);
       if (existingIndex >= 0) {
         final existing = _localItems[existingIndex];
         _localItems[existingIndex] = CartItemModel(
@@ -165,11 +155,8 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  ResultFuture<CheckoutResult> checkout(
-      String addressId, String paymentGateway) async {
+  ResultFuture<CheckoutResult> checkout(String addressId) async {
     try {
-      // Sync local cart to server before checkout (best-effort — failure does not
-      // block checkout because the backend cart is localStorage-based).
       if (_localItems.isNotEmpty) {
         try {
           final itemMaps = _localItems.map((i) => i.toMap()).toList();
@@ -179,56 +166,7 @@ class CartRepositoryImpl implements CartRepository {
         }
       }
 
-      final result =
-          await remoteDataSource.checkout(addressId, paymentGateway);
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message, statusCode: e.statusCode));
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
-    }
-  }
-
-  @override
-  ResultFuture<DataMap> confirmPayment(
-      String paymentId, String orderId, String gateway,
-      {String? signature}) async {
-    try {
-      final result = await remoteDataSource.confirmPayment(
-          paymentId, orderId, gateway,
-          signature: signature);
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message, statusCode: e.statusCode));
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
-    }
-  }
-
-  @override
-  ResultFuture<List<PaymentGateway>> getPaymentGateways() async {
-    try {
-      final gateways = await remoteDataSource.getPaymentGateways();
-      return Right(gateways);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message, statusCode: e.statusCode));
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString(), statusCode: '500'));
-    }
-  }
-
-  @override
-  ResultFuture<DataMap> verifyPhonePePayment(
-      String transactionId, String orderId) async {
-    try {
-      final result = await remoteDataSource.verifyPhonePePayment(
-          transactionId, orderId);
+      final result = await remoteDataSource.checkout(addressId);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));

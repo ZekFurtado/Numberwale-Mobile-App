@@ -8,46 +8,23 @@ import 'package:numberwale/core/utils/backend_config.dart';
 import 'package:numberwale/core/utils/typedef.dart';
 import 'package:numberwale/src/cart/data/models/cart_model.dart';
 import 'package:numberwale/src/cart/data/models/checkout_result_model.dart';
-import 'package:numberwale/src/cart/data/models/payment_gateway_model.dart';
 
-/// Abstract class defining all remote data operations for the cart
 abstract class CartRemoteDataSource {
-  /// Fetches the current cart from the API
   Future<CartModel> getCart();
 
-  /// Adds a product to the cart by product ID.
-  /// Returns the raw product DataMap from the API response.
   Future<DataMap> addToCart(String productId);
 
-  /// Removes a specific item from the cart by item ID
   Future<void> removeCartItem(String itemId);
 
-  /// Clears all items from the cart
   Future<void> clearCart();
 
-  /// Validates the cart items via the API
   Future<CartModel> validateCart();
 
-  /// Syncs local cart items with the server
   Future<CartModel> syncCart(List<DataMap> items);
 
-  /// Initiates checkout with the given address and payment gateway
-  Future<CheckoutResultModel> checkout(String addressId, String paymentGateway);
-
-  /// Confirms a payment after successful gateway transaction.
-  /// [signature] is required for Razorpay payment verification.
-  Future<DataMap> confirmPayment(
-      String paymentId, String orderId, String gateway,
-      {String? signature});
-
-  /// Fetches available payment gateways
-  Future<List<PaymentGatewayModel>> getPaymentGateways();
-
-  /// Verifies a PhonePe payment with the backend
-  Future<DataMap> verifyPhonePePayment(String transactionId, String orderId);
+  Future<CheckoutResultModel> checkout(String addressId);
 }
 
-/// Implementation of CartRemoteDataSource that makes actual API calls
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   final http.Client _client;
 
@@ -63,8 +40,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
       log('getCart status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200) {
-        final DataMap responseBody =
-            jsonDecode(response.body) as DataMap;
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
         return CartModel.fromMap(data);
       } else {
@@ -74,17 +50,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
@@ -97,8 +67,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       );
       log('addToCart status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final DataMap responseBody =
-            jsonDecode(response.body) as DataMap;
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
         return data['product'] as DataMap? ?? data;
       } else {
@@ -108,17 +77,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
@@ -137,17 +100,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
@@ -166,17 +123,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
@@ -189,8 +140,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final DataMap responseBody =
-            jsonDecode(response.body) as DataMap;
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
         return CartModel.fromMap(data);
       } else {
@@ -200,17 +150,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
@@ -224,8 +168,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final DataMap responseBody =
-            jsonDecode(response.body) as DataMap;
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
         return CartModel.fromMap(data);
       } else {
@@ -235,38 +178,25 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 
   @override
-  Future<CheckoutResultModel> checkout(
-      String addressId, String paymentGateway) async {
+  Future<CheckoutResultModel> checkout(String addressId) async {
     try {
-      final body = {
-        'addressId': addressId,
-        'paymentGateway': paymentGateway,
-      };
-
       final response = await _client.post(
         Uri.parse(BackendConfig.checkoutUrl),
         headers: BackendConfig.headers,
-        body: jsonEncode(body),
+        body: jsonEncode({'addressId': addressId}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final DataMap responseBody =
-            jsonDecode(response.body) as DataMap;
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
         return CheckoutResultModel.fromMap(data);
       } else {
@@ -276,135 +206,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }
     } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
     } on ServerException {
       rethrow;
     } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
-  }
-
-  @override
-  Future<DataMap> confirmPayment(
-      String paymentId, String orderId, String gateway,
-      {String? signature}) async {
-    try {
-      final body = <String, dynamic>{
-        'paymentId': paymentId,
-        'orderId': orderId,
-        'gateway': gateway,
-        if (signature != null) 'signature': signature,
-      };
-
-      final response = await _client.post(
-        Uri.parse(BackendConfig.paymentSuccessUrl),
-        headers: BackendConfig.headers,
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as DataMap;
-      } else {
-        throw ServerException(
-          message: 'Failed to confirm payment',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
-  }
-
-  @override
-  Future<List<PaymentGatewayModel>> getPaymentGateways() async {
-    try {
-      final response = await _client.get(
-        Uri.parse(BackendConfig.paymentGatewaysUrl),
-        headers: BackendConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final DataMap responseBody =
-            jsonDecode(response.body) as DataMap;
-        final data = responseBody['data'] as DataMap? ?? responseBody;
-        final rawGateways = data['gateways'] as List<dynamic>? ??
-            responseBody['data'] as List<dynamic>? ??
-            [];
-        return rawGateways
-            .map((g) => PaymentGatewayModel.fromMap(g as DataMap))
-            .toList();
-      } else {
-        throw ServerException(
-          message: 'Failed to fetch payment gateways',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
-    }
-  }
-
-  @override
-  Future<DataMap> verifyPhonePePayment(
-      String transactionId, String orderId) async {
-    try {
-      final body = {
-        'transactionId': transactionId,
-        'orderId': orderId,
-      };
-
-      final response = await _client.post(
-        Uri.parse(BackendConfig.verifyPhonePeUrl),
-        headers: BackendConfig.headers,
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as DataMap;
-      } else {
-        throw ServerException(
-          message: 'Failed to verify PhonePe payment',
-          statusCode: response.statusCode.toString(),
-        );
-      }
-    } on SocketException {
-      throw const NetworkException(
-        statusCode: '503',
-        message: 'No internet connection',
-      );
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: '500',
-      );
+      throw ServerException(message: e.toString(), statusCode: '500');
     }
   }
 }

@@ -45,26 +45,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- PhonePe payment callback URL scheme -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>numberwale</string>
-			</array>
-		</dict>
-	</array>
-	<!-- Razorpay uses the camera for QR code scanning -->
-	<key>NSCameraUsageDescription</key>
-	<string>Camera access is needed to scan QR codes for payment</string>
-	<!-- Allow querying the PhonePe app -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>phonepe</string>
-		<string>tpay</string>
-	</array>
 </dict>
 </plist>
