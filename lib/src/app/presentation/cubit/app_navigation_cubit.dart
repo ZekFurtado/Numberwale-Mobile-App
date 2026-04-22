@@ -11,4 +11,10 @@ class AppNavigationCubit extends Cubit<AppNavigationState> {
       emit(AppNavigationState(selectedIndex: index));
     }
   }
+
+  void selectTabWithSearch(int index, String query) {
+    if (index >= 0 && index < 5) {
+      emit(AppNavigationState(selectedIndex: index, initialSearchQuery: query));
+    }
+  }
 }

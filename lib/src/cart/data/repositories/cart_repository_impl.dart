@@ -155,7 +155,7 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  ResultFuture<CheckoutResult> checkout(String addressId) async {
+  ResultFuture<CheckoutResult> checkout(String addressId, String paymentGateway) async {
     try {
       if (_localItems.isNotEmpty) {
         try {
@@ -166,7 +166,7 @@ class CartRepositoryImpl implements CartRepository {
         }
       }
 
-      final result = await remoteDataSource.checkout(addressId);
+      final result = await remoteDataSource.checkout(addressId, paymentGateway);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));

@@ -119,7 +119,7 @@ class Routes {
 
         // Orders
         orders: (context) => BlocProvider(
-          create: (_) => di.sl<OrderBloc>(),
+          create: (_) => di.sl<OrderBloc>()..add(const LoadOrdersEvent()),
           child: const OrdersPage(),
         ),
 

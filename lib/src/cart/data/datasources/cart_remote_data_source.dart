@@ -22,7 +22,7 @@ abstract class CartRemoteDataSource {
 
   Future<CartModel> syncCart(List<DataMap> items);
 
-  Future<CheckoutResultModel> checkout(String addressId);
+  Future<CheckoutResultModel> checkout(String addressId, String paymentGateway);
 }
 
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
@@ -187,12 +187,12 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   }
 
   @override
-  Future<CheckoutResultModel> checkout(String addressId) async {
+  Future<CheckoutResultModel> checkout(String addressId, String paymentGateway) async {
     try {
       final response = await _client.post(
         Uri.parse(BackendConfig.checkoutUrl),
         headers: BackendConfig.headers,
-        body: jsonEncode({'addressId': addressId}),
+        body: jsonEncode({'paymentGateway': paymentGateway}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

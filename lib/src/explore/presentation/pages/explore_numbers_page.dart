@@ -8,6 +8,7 @@ import 'package:numberwale/core/widgets/empty_state.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
 import 'package:numberwale/core/widgets/product_list_item.dart';
 import 'package:numberwale/core/widgets/sort_bottom_sheet.dart';
+import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
@@ -28,13 +29,26 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
   @override
   void initState() {
     super.initState();
-    // Load products on first view
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProductBloc>().add(const LoadProductsEvent(
-            filters: ProductFilters(),
-          ));
-    });
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navState = context.read<AppNavigationCubit>().state;
+      final pendingQuery = navState.initialSearchQuery;
+      if (pendingQuery != null && pendingQuery.isNotEmpty) {
+        _applySearchQuery(pendingQuery);
+      } else if (context.read<ProductBloc>().state is ProductInitial) {
+        context.read<ProductBloc>().add(const LoadProductsEvent(
+              filters: ProductFilters(),
+            ));
+      }
+    });
+  }
+
+  void _applySearchQuery(String query) {
+    _searchController.text = query;
+    setState(() => _uiFilters = _uiFilters.copyWith(searchQuery: query));
+    context.read<ProductBloc>().add(
+          ApplyFiltersEvent(filters: _toProductFilters()),
+        );
   }
 
   @override
@@ -124,8 +138,18 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: Column(
+    return BlocListener<AppNavigationCubit, AppNavigationState>(
+      listenWhen: (prev, curr) =>
+          curr.selectedIndex == 1 &&
+          curr.initialSearchQuery != null &&
+          curr.initialSearchQuery != prev.initialSearchQuery,
+      listener: (context, state) {
+        final query = state.initialSearchQuery!;
+        _searchDebounce?.cancel();
+        _applySearchQuery(query);
+      },
+      child: Scaffold(
+        body: Column(
         children: [
           // Search bar with filter and sort buttons
           Container(
@@ -367,6 +391,7 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

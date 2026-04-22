@@ -15,5 +15,5 @@ abstract class CartRepository {
 
   ResultFuture<Cart> syncCart(List<DataMap> items);
 
-  ResultFuture<CheckoutResult> checkout(String addressId);
+  ResultFuture<CheckoutResult> checkout(String addressId, String paymentGateway);
 }

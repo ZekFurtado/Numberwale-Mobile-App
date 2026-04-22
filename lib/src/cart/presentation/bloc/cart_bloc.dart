@@ -104,7 +104,10 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     emit(const CheckingOut());
 
     final result = await _checkout(
-      CheckoutParams(addressId: event.addressId),
+      CheckoutParams(
+        addressId: event.addressId,
+        paymentGateway: event.paymentGateway,
+      ),
     );
 
     result.fold(

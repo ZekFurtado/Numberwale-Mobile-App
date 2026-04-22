@@ -455,7 +455,13 @@ class _HomePageState extends State<HomePage> {
                   child: NumberSearchBar(
                     controller: _searchController,
                     onSubmitted: (value) {
-                      context.read<AppNavigationCubit>().selectTab(1);
+                      if (value.trim().isNotEmpty) {
+                        context
+                            .read<AppNavigationCubit>()
+                            .selectTabWithSearch(1, value.trim());
+                      } else {
+                        context.read<AppNavigationCubit>().selectTab(1);
+                      }
                     },
                     onFilterTap: () {
                       Navigator.pushNamed(context, Routes.advancedSearch);

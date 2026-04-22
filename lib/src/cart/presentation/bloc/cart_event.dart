@@ -40,10 +40,14 @@ class ClearCartEvent extends CartEvent {
 }
 
 class CheckoutEvent extends CartEvent {
-  const CheckoutEvent({required this.addressId});
+  const CheckoutEvent({
+    required this.addressId,
+    required this.paymentGateway,
+  });
 
   final String addressId;
+  final String paymentGateway;
 
   @override
-  List<Object> get props => [addressId];
+  List<Object> get props => [addressId, paymentGateway];
 }

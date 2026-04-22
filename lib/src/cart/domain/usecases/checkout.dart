@@ -16,16 +16,20 @@ class Checkout extends UseCaseWithParams<CheckoutResult, CheckoutParams> {
 
   @override
   ResultFuture<CheckoutResult> call(CheckoutParams params) {
-    return repository.checkout(params.addressId);
+    return repository.checkout(params.addressId, params.paymentGateway);
   }
 }
 
 /// Parameters for initiating a checkout
 class CheckoutParams extends Equatable {
   final String addressId;
+  final String paymentGateway;
 
-  const CheckoutParams({required this.addressId});
+  const CheckoutParams({
+    required this.addressId,
+    required this.paymentGateway,
+  });
 
   @override
-  List<Object?> get props => [addressId];
+  List<Object?> get props => [addressId, paymentGateway];
 }

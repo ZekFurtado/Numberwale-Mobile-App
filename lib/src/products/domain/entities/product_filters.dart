@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
 
 /// Filters for product listing API
@@ -61,7 +63,10 @@ class ProductFilters extends Equatable {
       'page': page.toString(),
       'limit': limit.toString(),
     };
-    if (search != null && search!.isNotEmpty) params['search'] = search!;
+    if (search != null && search!.isNotEmpty) {
+      // params['search'] = jsonEncode({'globalSearch': search});
+      params['search[globalSearch]'] = search ?? "";
+    }
     if (category != null) params['category'] = category!;
     if (minPrice != null && maxPrice != null) {
       params['priceRange'] = '${minPrice!.toInt()}-${maxPrice!.toInt()}';
