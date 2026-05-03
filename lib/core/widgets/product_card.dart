@@ -150,7 +150,7 @@ class ProductCard extends StatelessWidget {
                           Icon(
                             Icons.check_circle,
                             size: 14,
-                            color: theme.colorScheme.tertiary,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(

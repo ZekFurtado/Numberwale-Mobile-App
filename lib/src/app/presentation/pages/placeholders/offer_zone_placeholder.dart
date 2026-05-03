@@ -118,7 +118,7 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
                 gradient: LinearGradient(
                   colors: [
                     theme.colorScheme.primary,
-                    theme.colorScheme.tertiary,
+                    theme.colorScheme.primary,
                   ],
                 ),
               ),

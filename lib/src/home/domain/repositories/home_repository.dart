@@ -17,12 +17,6 @@ abstract class HomeRepository {
   /// Fetches all active categories with their counts
   ResultFuture<List<Category>> getCategories();
 
-  /// Fetches featured/VIP numbers for the home screen
-  ResultFuture<List<PhoneNumber>> getFeaturedNumbers({int limit = 10});
-
-  /// Fetches latest/recently added numbers for the home screen
-  ResultFuture<List<PhoneNumber>> getLatestNumbers({int limit = 10});
-
-  /// Fetches trending numbers based on views/searches
-  ResultFuture<List<PhoneNumber>> getTrendingNumbers({int limit = 10});
+  /// Fetches discounted numbers for the home screen
+  ResultFuture<List<PhoneNumber>> getDiscountedNumbers({int limit = 10});
 }

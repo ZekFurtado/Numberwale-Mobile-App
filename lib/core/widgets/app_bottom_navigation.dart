@@ -33,11 +33,6 @@ class AppBottomNavigation extends StatelessWidget {
           label: 'Offers',
         ),
         NavigationDestination(
-          icon: Icon(Icons.edit_outlined),
-          selectedIcon: Icon(Icons.edit),
-          label: 'Customize',
-        ),
-        NavigationDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
           label: 'Account',

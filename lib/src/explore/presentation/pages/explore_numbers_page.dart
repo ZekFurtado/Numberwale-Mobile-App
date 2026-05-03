@@ -33,7 +33,13 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final navState = context.read<AppNavigationCubit>().state;
       final pendingQuery = navState.initialSearchQuery;
-      if (pendingQuery != null && pendingQuery.isNotEmpty) {
+      final pendingFilters = navState.initialFilters;
+      if (pendingFilters != null) {
+        setState(() => _uiFilters = pendingFilters);
+        context.read<ProductBloc>().add(
+              ApplyFiltersEvent(filters: _toProductFilters()),
+            );
+      } else if (pendingQuery != null && pendingQuery.isNotEmpty) {
         _applySearchQuery(pendingQuery);
       } else if (context.read<ProductBloc>().state is ProductInitial) {
         context.read<ProductBloc>().add(const LoadProductsEvent(

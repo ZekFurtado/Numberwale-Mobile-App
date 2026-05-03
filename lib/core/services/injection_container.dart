@@ -36,8 +36,7 @@ import '../../src/home/data/repositories/home_repository_impl.dart';
 import '../../src/home/domain/repositories/home_repository.dart';
 import '../../src/home/domain/usecases/get_banners.dart';
 import '../../src/home/domain/usecases/get_categories.dart';
-import '../../src/home/domain/usecases/get_featured_numbers.dart';
-import '../../src/home/domain/usecases/get_latest_numbers.dart';
+import '../../src/home/domain/usecases/get_discounted_numbers.dart';
 import '../../src/home/presentation/bloc/home_bloc.dart';
 import '../../src/products/data/datasources/product_remote_data_source.dart';
 import '../../src/products/data/repositories/product_repository_impl.dart';
@@ -124,8 +123,7 @@ Future<void> init() async {
     ..registerFactory(() => HomeBloc(
         getBanners: sl(),
         getCategories: sl(),
-        getFeaturedNumbers: sl(),
-        getLatestNumbers: sl(),
+        getDiscountedNumbers: sl(),
     ))
 
     /// Products
@@ -195,8 +193,7 @@ Future<void> init() async {
     /// Home
     ..registerLazySingleton(() => GetBanners(sl()))
     ..registerLazySingleton(() => GetCategories(sl()))
-    ..registerLazySingleton(() => GetFeaturedNumbers(sl()))
-    ..registerLazySingleton(() => GetLatestNumbers(sl()))
+    ..registerLazySingleton(() => GetDiscountedNumbers(sl()))
 
     /// Products
     ..registerLazySingleton(() => GetProducts(sl()))

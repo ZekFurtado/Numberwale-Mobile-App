@@ -94,98 +94,32 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  ResultFuture<List<PhoneNumber>> getFeaturedNumbers({int limit = 10}) async {
+  ResultFuture<List<PhoneNumber>> getDiscountedNumbers({int limit = 10}) async {
     try {
-      final numbers = await remoteDataSource.getFeaturedNumbers(limit: limit);
-      // Cache the numbers locally for offline access
-      await localDataSource.cacheFeaturedNumbers(numbers);
+      final numbers =
+          await remoteDataSource.getDiscountedNumbers(limit: limit);
+      await localDataSource.cacheDiscountedNumbers(numbers);
       return Right(numbers);
     } on ServerException catch (e) {
-      // Try to get cached numbers if network call fails
       try {
-        final cachedNumbers =
-            await localDataSource.getCachedFeaturedNumbers();
-        return Right(cachedNumbers);
+        final cached = await localDataSource.getCachedDiscountedNumbers();
+        return Right(cached);
       } on CacheException {
-        // If both network and cache fail, return the network error
         return Left(ServerFailure(
           message: e.message,
           statusCode: e.statusCode,
         ));
       }
     } on NetworkException {
-      // Try to get cached numbers if no network
       try {
-        final cachedNumbers =
-            await localDataSource.getCachedFeaturedNumbers();
-        return Right(cachedNumbers);
+        final cached = await localDataSource.getCachedDiscountedNumbers();
+        return Right(cached);
       } on CacheException {
         return const Left(NetworkFailure(
           message: 'No internet connection and no cached data',
           statusCode: '503',
         ));
       }
-    } catch (e) {
-      return Left(ServerFailure(
-        message: e.toString(),
-        statusCode: '500',
-      ));
-    }
-  }
-
-  @override
-  ResultFuture<List<PhoneNumber>> getLatestNumbers({int limit = 10}) async {
-    try {
-      final numbers = await remoteDataSource.getLatestNumbers(limit: limit);
-      // Cache the numbers locally for offline access
-      await localDataSource.cacheLatestNumbers(numbers);
-      return Right(numbers);
-    } on ServerException catch (e) {
-      // Try to get cached numbers if network call fails
-      try {
-        final cachedNumbers = await localDataSource.getCachedLatestNumbers();
-        return Right(cachedNumbers);
-      } on CacheException {
-        // If both network and cache fail, return the network error
-        return Left(ServerFailure(
-          message: e.message,
-          statusCode: e.statusCode,
-        ));
-      }
-    } on NetworkException {
-      // Try to get cached numbers if no network
-      try {
-        final cachedNumbers = await localDataSource.getCachedLatestNumbers();
-        return Right(cachedNumbers);
-      } on CacheException {
-        return const Left(NetworkFailure(
-          message: 'No internet connection and no cached data',
-          statusCode: '503',
-        ));
-      }
-    } catch (e) {
-      return Left(ServerFailure(
-        message: e.toString(),
-        statusCode: '500',
-      ));
-    }
-  }
-
-  @override
-  ResultFuture<List<PhoneNumber>> getTrendingNumbers({int limit = 10}) async {
-    try {
-      final numbers = await remoteDataSource.getTrendingNumbers(limit: limit);
-      return Right(numbers);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(
-        message: e.message,
-        statusCode: e.statusCode,
-      ));
-    } on NetworkException {
-      return const Left(NetworkFailure(
-        message: 'No internet connection',
-        statusCode: '503',
-      ));
     } catch (e) {
       return Left(ServerFailure(
         message: e.toString(),

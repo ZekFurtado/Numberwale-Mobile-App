@@ -27,22 +27,15 @@ class HomeDataLoaded extends HomeState {
   const HomeDataLoaded({
     required this.banners,
     required this.categories,
-    required this.featuredNumbers,
-    required this.latestNumbers,
+    required this.discountedNumbers,
   });
 
   final List<Banner> banners;
   final List<Category> categories;
-  final List<PhoneNumber> featuredNumbers;
-  final List<PhoneNumber> latestNumbers;
+  final List<PhoneNumber> discountedNumbers;
 
   @override
-  List<Object> get props => [
-        banners,
-        categories,
-        featuredNumbers,
-        latestNumbers,
-      ];
+  List<Object> get props => [banners, categories, discountedNumbers];
 }
 
 /// Error occurred while loading home data

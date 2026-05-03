@@ -20,17 +20,11 @@ abstract class HomeLocalDataSource {
   /// Gets cached categories from local storage
   Future<List<CategoryModel>> getCachedCategories();
 
-  /// Caches featured numbers list locally
-  Future<void> cacheFeaturedNumbers(List<PhoneNumberModel> numbers);
+  /// Caches discounted numbers list locally
+  Future<void> cacheDiscountedNumbers(List<PhoneNumberModel> numbers);
 
-  /// Gets cached featured numbers from local storage
-  Future<List<PhoneNumberModel>> getCachedFeaturedNumbers();
-
-  /// Caches latest numbers list locally
-  Future<void> cacheLatestNumbers(List<PhoneNumberModel> numbers);
-
-  /// Gets cached latest numbers from local storage
-  Future<List<PhoneNumberModel>> getCachedLatestNumbers();
+  /// Gets cached discounted numbers from local storage
+  Future<List<PhoneNumberModel>> getCachedDiscountedNumbers();
 
   /// Clears all home screen cached data
   Future<void> clearCache();
@@ -42,8 +36,7 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
 
   static const String _bannersCacheKey = 'CACHED_HOME_BANNERS';
   static const String _categoriesCacheKey = 'CACHED_HOME_CATEGORIES';
-  static const String _featuredNumbersCacheKey = 'CACHED_FEATURED_NUMBERS';
-  static const String _latestNumbersCacheKey = 'CACHED_LATEST_NUMBERS';
+  static const String _discountedNumbersCacheKey = 'CACHED_DISCOUNTED_NUMBERS';
 
   HomeLocalDataSourceImpl(this._sharedPreferences);
 
@@ -131,31 +124,31 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
   }
 
   @override
-  Future<void> cacheFeaturedNumbers(List<PhoneNumberModel> numbers) async {
+  Future<void> cacheDiscountedNumbers(List<PhoneNumberModel> numbers) async {
     try {
-      final numbersJson = numbers.map((number) => number.toMap()).toList();
+      final numbersJson = numbers.map((n) => n.toMap()).toList();
       await _sharedPreferences.setString(
-        _featuredNumbersCacheKey,
+        _discountedNumbersCacheKey,
         jsonEncode(numbersJson),
       );
     } catch (e) {
       throw CacheException(
         statusCode: '500',
-        message: 'Failed to cache featured numbers: $e',
+        message: 'Failed to cache discounted numbers: $e',
       );
     }
   }
 
   @override
-  Future<List<PhoneNumberModel>> getCachedFeaturedNumbers() async {
+  Future<List<PhoneNumberModel>> getCachedDiscountedNumbers() async {
     try {
       final cachedString =
-          _sharedPreferences.getString(_featuredNumbersCacheKey);
+          _sharedPreferences.getString(_discountedNumbersCacheKey);
 
       if (cachedString == null) {
         throw const CacheException(
           statusCode: '404',
-          message: 'No cached featured numbers found',
+          message: 'No cached discounted numbers found',
         );
       }
 
@@ -167,48 +160,7 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
     } catch (e) {
       throw CacheException(
         statusCode: '500',
-        message: 'Failed to get cached featured numbers: $e',
-      );
-    }
-  }
-
-  @override
-  Future<void> cacheLatestNumbers(List<PhoneNumberModel> numbers) async {
-    try {
-      final numbersJson = numbers.map((number) => number.toMap()).toList();
-      await _sharedPreferences.setString(
-        _latestNumbersCacheKey,
-        jsonEncode(numbersJson),
-      );
-    } catch (e) {
-      throw CacheException(
-        statusCode: '500',
-        message: 'Failed to cache latest numbers: $e',
-      );
-    }
-  }
-
-  @override
-  Future<List<PhoneNumberModel>> getCachedLatestNumbers() async {
-    try {
-      final cachedString = _sharedPreferences.getString(_latestNumbersCacheKey);
-
-      if (cachedString == null) {
-        throw const CacheException(
-          statusCode: '404',
-          message: 'No cached latest numbers found',
-        );
-      }
-
-      final List<dynamic> numbersJson =
-          jsonDecode(cachedString) as List<dynamic>;
-      return numbersJson
-          .map((json) => PhoneNumberModel.fromMap(json as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      throw CacheException(
-        statusCode: '500',
-        message: 'Failed to get cached latest numbers: $e',
+        message: 'Failed to get cached discounted numbers: $e',
       );
     }
   }
@@ -219,8 +171,7 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
       await Future.wait([
         _sharedPreferences.remove(_bannersCacheKey),
         _sharedPreferences.remove(_categoriesCacheKey),
-        _sharedPreferences.remove(_featuredNumbersCacheKey),
-        _sharedPreferences.remove(_latestNumbersCacheKey),
+        _sharedPreferences.remove(_discountedNumbersCacheKey),
       ]);
     } catch (e) {
       throw CacheException(

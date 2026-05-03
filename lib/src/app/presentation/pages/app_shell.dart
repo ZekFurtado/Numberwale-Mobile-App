@@ -5,7 +5,6 @@ import 'package:numberwale/core/widgets/app_bottom_navigation.dart';
 import 'package:numberwale/core/widgets/numberwale_app_bar.dart';
 import 'package:numberwale/src/account/presentation/pages/account_page.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
-import 'package:numberwale/src/app/presentation/pages/placeholders/customize_placeholder.dart';
 import 'package:numberwale/src/app/presentation/pages/placeholders/offer_zone_placeholder.dart';
 import 'package:numberwale/src/explore/presentation/pages/explore_numbers_page.dart';
 import 'package:numberwale/src/home/presentation/pages/home_page.dart';
@@ -33,7 +32,6 @@ class _AppShellView extends StatelessWidget {
     const HomePage(),
     const ExploreNumbersPage(),
     const OfferZonePlaceholder(),
-    const CustomizePlaceholder(),
     const AccountPage(),
   ];
 
@@ -41,7 +39,6 @@ class _AppShellView extends StatelessWidget {
     'Home',
     'Explore Numbers',
     'Offer Zone',
-    'Customize Number',
     'Account',
   ];
 
@@ -50,8 +47,8 @@ class _AppShellView extends StatelessWidget {
     return BlocBuilder<AppNavigationCubit, AppNavigationState>(
       builder: (context, state) {
         return Scaffold(
-          // Don't show app bar for home page (index 0) and account page (index 4), they have their own
-          appBar: state.selectedIndex == 0 || state.selectedIndex == 4
+          // Don't show app bar for home page (index 0) and account page (index 3), they have their own
+          appBar: state.selectedIndex == 0 || state.selectedIndex == 3
               ? null
               : NumberwaleAppBar(
                   title: _titles[state.selectedIndex],
