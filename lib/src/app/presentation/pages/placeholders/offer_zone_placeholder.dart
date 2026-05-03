@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
-import 'package:numberwale/core/widgets/product_list_item.dart';
+import 'package:numberwale/core/widgets/product_card.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
@@ -137,20 +137,22 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
               ),
             ),
 
-            // Product list
+            // Product grid
             Expanded(
-              child: ListView.builder(
+              child: GridView.builder(
                 controller: _scrollController,
-                itemCount: products.length + (isLoadingMore ? 1 : 0),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.35,
+                ),
+                itemCount: products.length,
                 itemBuilder: (context, index) {
-                  if (index >= products.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
                   final pn = products[index];
-                  return ProductListItem(
+                  return ProductCard(
                     phoneNumber: pn.number,
                     price: pn.originalPrice?.toDouble() ?? pn.price,
                     category: pn.category,
@@ -179,6 +181,11 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
                 },
               ),
             ),
+            if (isLoadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator()),
+              ),
           ],
         );
       },

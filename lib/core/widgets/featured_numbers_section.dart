@@ -38,7 +38,7 @@ class FeaturedNumbersSection extends StatelessWidget {
                       ),
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         subtitle!,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -57,33 +57,33 @@ class FeaturedNumbersSection extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // Horizontal scrollable list
-        SizedBox(
-          height: 260,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: numbers.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final number = numbers[index];
-              return SizedBox(
-                width: 280,
-                child: ProductCard(
-                  phoneNumber: number.phoneNumber,
-                  price: number.price,
-                  category: number.category,
-                  features: number.features,
-                  discount: number.discount,
-                  isFeatured: number.isFeatured,
-                  onTap: number.onTap,
-                  onAddToCart: number.onAddToCart,
-                ),
-              );
-            },
+        // 2-column grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.35,
           ),
+          itemCount: numbers.length,
+          itemBuilder: (context, index) {
+            final n = numbers[index];
+            return ProductCard(
+              phoneNumber: n.phoneNumber,
+              price: n.price,
+              category: n.category,
+              features: n.features,
+              discount: n.discount,
+              isFeatured: n.isFeatured,
+              onTap: n.onTap,
+              onAddToCart: n.onAddToCart,
+            );
+          },
         ),
       ],
     );

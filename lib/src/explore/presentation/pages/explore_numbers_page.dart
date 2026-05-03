@@ -6,7 +6,7 @@ import 'package:numberwale/core/models/filter_models.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
-import 'package:numberwale/core/widgets/product_list_item.dart';
+import 'package:numberwale/core/widgets/product_card.dart';
 import 'package:numberwale/core/widgets/sort_bottom_sheet.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
@@ -352,23 +352,27 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                       ),
                     ),
                     Expanded(
-                      child: ListView.builder(
+                      child: GridView.builder(
                         controller: _scrollController,
-                        itemCount: products.length + (isLoadingMore ? 1 : 0),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.35,
+                        ),
+                        itemCount: products.length,
                         itemBuilder: (context, index) {
-                          if (index >= products.length) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
                           final pn = products[index];
-                          return ProductListItem(
+                          return ProductCard(
                             phoneNumber: pn.number,
                             price: pn.price,
                             category: pn.category,
                             features: List<String>.from(pn.features),
-                            discount: pn.discount > 0 ? pn.discount.toDouble() : null,
+                            discount: pn.discount > 0
+                                ? pn.discount.toDouble()
+                                : null,
                             isFeatured: pn.isFeatured,
                             onTap: () => Navigator.pushNamed(
                               context,
@@ -383,7 +387,9 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                                       price: pn.price,
                                     ));
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('${pn.number} added to cart')),
+                                  SnackBar(
+                                      content:
+                                          Text('${pn.number} added to cart')),
                                 );
                               }
                             },
@@ -391,6 +397,11 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                         },
                       ),
                     ),
+                    if (isLoadingMore)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
                   ],
                 );
               },
