@@ -142,9 +142,15 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
               child: GridView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                gridDelegate:
+                /*gridDelegate:
                     const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.35,
+                ),*/
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 250,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                   childAspectRatio: 1.35,
