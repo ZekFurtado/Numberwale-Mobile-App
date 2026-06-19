@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
+import 'package:numberwale/src/authentication/data/datasources/auth_local_data_source.dart';
+import 'package:numberwale/src/authentication/domain/usecases/refresh_token.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -39,23 +42,41 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateAfterDelay() async {
-    await Future.delayed(const Duration(seconds: 3));
-
-    if (!mounted) return;
+    // Run the minimum display timer and session check concurrently.
+    final minDisplay = Future.delayed(const Duration(seconds: 2));
 
     final prefs = await SharedPreferences.getInstance();
     final hasCompletedOnboarding =
         prefs.getBool('has_completed_onboarding') ?? false;
-    final isLoggedIn = prefs.getString('CACHED_USER') != null;
+    final cachedUser = prefs.getString('CACHED_USER');
 
-    if (!mounted) return;
+    String nextRoute;
 
     if (!hasCompletedOnboarding) {
-      Navigator.pushReplacementNamed(context, Routes.onboarding);
-    } else if (!isLoggedIn) {
-      Navigator.pushReplacementNamed(context, Routes.login);
+      nextRoute = Routes.onboarding;
+    } else if (cachedUser == null) {
+      nextRoute = Routes.login;
     } else {
-      Navigator.pushReplacementNamed(context, Routes.appShell);
+      // Verify the server session is still active.
+      final isValid = await _verifySession();
+      if (!isValid) {
+        await di.sl<AuthLocalDataSource>().clearCache();
+      }
+      nextRoute = isValid ? Routes.appShell : Routes.login;
+    }
+
+    await minDisplay;
+
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, nextRoute);
+  }
+
+  Future<bool> _verifySession() async {
+    try {
+      final result = await di.sl<RefreshToken>()();
+      return result.isRight();
+    } catch (_) {
+      return false;
     }
   }
 

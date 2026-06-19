@@ -110,9 +110,15 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       ),
     );
 
+    CheckoutResult? checkoutResult;
     result.fold(
       (failure) => emit(CartError(message: failure.message)),
-      (checkoutResult) => emit(CheckoutComplete(result: checkoutResult)),
+      (r) => checkoutResult = r,
     );
+
+    if (checkoutResult != null) {
+      await _clearCart();
+      emit(CheckoutComplete(result: checkoutResult!));
+    }
   }
 }

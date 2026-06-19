@@ -7,11 +7,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// `name=value` pairs in SharedPreferences. On every request it reads those
 /// stored pairs back and injects them as the `Cookie:` header, so the server
 /// always sees the session cookies even across app restarts.
+///
+/// Set [onUnauthorized] to handle global 401 session-expiry events (e.g. clear
+/// local state and navigate to login). The callback is debounced to 3 seconds
+/// to prevent duplicate triggers from concurrent requests.
 class AuthenticatedClient extends http.BaseClient {
   final http.Client _inner;
   final SharedPreferences _prefs;
 
   static const _cookiesKey = 'auth_cookies';
+
+  /// Called at most once every 3 seconds when the server returns 401.
+  void Function()? onUnauthorized;
+  DateTime? _lastUnauthorizedAt;
 
   AuthenticatedClient(this._inner, this._prefs);
 
@@ -29,6 +37,15 @@ class AuthenticatedClient extends http.BaseClient {
       final parsed = _extractCookies(setCookie);
       if (parsed.isNotEmpty) {
         await _prefs.setString(_cookiesKey, parsed);
+      }
+    }
+
+    if (response.statusCode == 401) {
+      final now = DateTime.now();
+      final last = _lastUnauthorizedAt;
+      if (last == null || now.difference(last).inSeconds > 3) {
+        _lastUnauthorizedAt = now;
+        onUnauthorized?.call();
       }
     }
 

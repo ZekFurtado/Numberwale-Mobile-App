@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:numberwale/core/services/injection_container.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/auth_mode_toggle.dart';
 import 'package:numberwale/core/widgets/password_input_field.dart';
@@ -67,7 +66,6 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    print(_emailController.text);
     context.read<AuthenticationBloc>().add(
           LoginWithPasswordEvent(
             contact: _emailController.text,
@@ -94,7 +92,6 @@ class _LoginPageState extends State<LoginPage> {
 
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
       listener: (context, state) {
-        print(state);
         if (state is LoggedIn) {
           // Navigate to app shell on successful login
           Navigator.pushNamedAndRemoveUntil(

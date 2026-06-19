@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:numberwale/core/services/authenticated_client.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/utils/theme.dart';
 import 'package:numberwale/src/address/presentation/bloc/address_bloc.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
+import 'package:numberwale/src/authentication/data/datasources/auth_local_data_source.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
@@ -27,6 +29,15 @@ void main() async {
 
   // Initialize dependency injection
   await di.init();
+
+  // Redirect to login on any 401 response (session expired mid-use).
+  di.sl<AuthenticatedClient>().onUnauthorized = () async {
+    await di.sl<AuthLocalDataSource>().clearCache();
+    _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      Routes.login,
+      (route) => false,
+    );
+  };
 
   runApp(const NumberwaleApp());
 }

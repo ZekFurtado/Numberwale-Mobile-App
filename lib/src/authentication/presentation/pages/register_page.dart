@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:numberwale/core/services/injection_container.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/password_input_field.dart';
 import 'package:numberwale/core/widgets/phone_input_field.dart';
@@ -136,8 +135,8 @@ class _RegisterPageState extends State<RegisterPage> {
             mobile: _mobileController.text,
             password: _passwordController.text,
             accountType: _accountType == AccountType.individual
-                ? 'individual'
-                : 'corporate',
+                ? 'Individual'
+                : 'Corporate',
             companyName: _companyNameController.text.isEmpty
                 ? null
                 : _companyNameController.text,

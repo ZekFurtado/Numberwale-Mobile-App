@@ -170,6 +170,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       if (response.statusCode == 200) {
         final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
+        print(responseBody);
         return CartModel.fromMap(data);
       } else {
         throw ServerException(
@@ -195,6 +196,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         body: jsonEncode({'paymentGateway': paymentGateway}),
       );
 
+      print(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;

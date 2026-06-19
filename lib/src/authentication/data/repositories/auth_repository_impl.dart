@@ -242,27 +242,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   ResultVoid signOut() async {
+    // Always clear local state — server logout is best-effort.
+    await localDataSource.clearCache();
     try {
       await remoteDataSource.signOut();
-      // Clear cached user data
-      await localDataSource.clearCache();
-      return const Right(null);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(
-        message: e.message,
-        statusCode: e.statusCode,
-      ));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(
-        message: e.message,
-        statusCode: e.statusCode,
-      ));
-    } catch (e) {
-      return Left(ServerFailure(
-        message: e.toString(),
-        statusCode: '500',
-      ));
+    } catch (_) {
+      // Ignore server errors; local session is already cleared.
     }
+    return const Right(null);
   }
 
   @override
