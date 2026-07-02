@@ -19,7 +19,11 @@ class RemoveCartItem extends UseCaseWithParams<void, RemoveCartItemParams> {
   }
 }
 
-/// Parameters for removing a cart item
+/// Parameters for removing a cart item. Callers should prefer the cart-row
+/// id (Cart.items[].id, from GET /cart) and only fall back to productId
+/// when it's unavailable — DELETE /cart/item/{itemId} is the only working
+/// removal route on the live backend (the documented
+/// "DELETE /cart/items/{productId}" alternative 404s).
 class RemoveCartItemParams extends Equatable {
   final String itemId;
 

@@ -7,7 +7,8 @@ import 'package:numberwale/core/errors/exceptions.dart';
 import 'package:numberwale/core/utils/backend_config.dart';
 
 abstract class NumerologyRemoteDataSource {
-  Future<void> submitConsultation({
+  /// Returns the success message from the server response.
+  Future<String> submitConsultation({
     required String firstName,
     required String lastName,
     required String gender,
@@ -31,7 +32,7 @@ class NumerologyRemoteDataSourceImpl implements NumerologyRemoteDataSource {
   NumerologyRemoteDataSourceImpl(this._client);
 
   @override
-  Future<void> submitConsultation({
+  Future<String> submitConsultation({
     required String firstName,
     required String lastName,
     required String gender,
@@ -73,14 +74,18 @@ class NumerologyRemoteDataSourceImpl implements NumerologyRemoteDataSource {
         body: jsonEncode(body),
       );
 
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
       if (response.statusCode != 200 && response.statusCode != 201) {
-        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
         throw ServerException(
-          message: errorData['message'] as String? ??
+          message: responseData['message'] as String? ??
               'Failed to submit numerology consultation',
           statusCode: response.statusCode.toString(),
         );
       }
+
+      return responseData['message'] as String? ??
+          'Numerology request submitted successfully! We will contact you within 24-48 hours.';
     } on SocketException {
       throw const NetworkException(
         message: 'No internet connection',

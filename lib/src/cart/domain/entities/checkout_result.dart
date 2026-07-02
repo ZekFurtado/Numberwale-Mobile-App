@@ -1,24 +1,22 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents the result of initiating a checkout
 class CheckoutResult extends Equatable {
-  /// Internal order ID
   final String orderId;
-
-  /// Human-readable order number (e.g. ORD-2026-001)
   final String orderNumber;
-
-  /// Amount charged
   final double amount;
-
-  /// Currency code (e.g. INR)
   final String currency;
+
+  /// Present when paymentGateway='phonepe': the hosted PhonePe payment page
+  /// to redirect the user to (there is no PhonePe SDK token from this
+  /// backend — see POST /cart/checkout in the API docs).
+  final String? paymentUrl;
 
   const CheckoutResult({
     required this.orderId,
     required this.orderNumber,
     required this.amount,
     required this.currency,
+    this.paymentUrl,
   });
 
   @override

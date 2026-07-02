@@ -46,10 +46,7 @@ class NumerologyBloc extends Bloc<NumerologyEvent, NumerologyState> {
 
     result.fold(
       (failure) => emit(NumerologyError(message: failure.message)),
-      (_) => emit(const NumerologySubmitted(
-        message:
-            'Numerology request submitted successfully! We will contact you within 24-48 hours.',
-      )),
+      (message) => emit(NumerologySubmitted(message: message)),
     );
   }
 }

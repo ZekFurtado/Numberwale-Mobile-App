@@ -134,7 +134,9 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-        final raw = decoded['data'] as Map<String, dynamic>?
+        final data = decoded['data'] as Map<String, dynamic>?;
+        final raw = data?['address'] as Map<String, dynamic>?
+            ?? data
             ?? decoded['address'] as Map<String, dynamic>?
             ?? decoded;
         return AddressModel.fromMap(_normalise(raw));
@@ -188,7 +190,9 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-        final raw = decoded['data'] as Map<String, dynamic>?
+        final data = decoded['data'] as Map<String, dynamic>?;
+        final raw = data?['address'] as Map<String, dynamic>?
+            ?? data
             ?? decoded['address'] as Map<String, dynamic>?
             ?? decoded;
         return AddressModel.fromMap(_normalise(raw));

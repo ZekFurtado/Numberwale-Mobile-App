@@ -80,16 +80,4 @@ class CartItemModel extends CartItem {
       imageUrl: map['imageUrl'] as String? ?? map['image_url'] as String?,
     );
   }
-
-  /// Converts this CartItemModel to a Map
-  DataMap toMap() {
-    return {
-      if (id != null) '_id': id,
-      'productId': productId,
-      'productNumber': productNumber,
-      'price': price,
-      'quantity': quantity,
-      if (imageUrl != null) 'imageUrl': imageUrl,
-    };
-  }
 }

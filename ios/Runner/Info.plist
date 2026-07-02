@@ -43,5 +43,13 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>phonepe</string>
+		<string>tpay</string>
+		<string>gpay</string>
+		<string>paytmmp</string>
+		<string>bhim</string>
+	</array>
 </dict>
 </plist>

@@ -34,12 +34,20 @@ class CartSummaryCard extends StatelessWidget {
   double get _grandTotal => totalAmount ?? (_subtotalAfterDiscount + _totalGst);
 
   String _formatPrice(double price) {
-    if (price >= 100000) {
-      return '₹${(price / 100000).toStringAsFixed(2)}L';
-    } else if (price >= 1000) {
-      return '₹${(price / 1000).toStringAsFixed(2)}K';
+    final fixed = price.toStringAsFixed(2);
+    final dotIndex = fixed.indexOf('.');
+    final wholePart = fixed.substring(0, dotIndex);
+    final decimalPart = fixed.substring(dotIndex);
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < wholePart.length; i++) {
+      if (i > 0 && (wholePart.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(wholePart[i]);
     }
-    return '₹${price.toStringAsFixed(0)}';
+
+    return '₹$buffer$decimalPart';
   }
 
   @override

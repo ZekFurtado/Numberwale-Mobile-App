@@ -68,13 +68,13 @@ class FeaturedNumbersSection extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 1.35,
+            childAspectRatio: 0.78,
           ),*/
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 250,
+            maxCrossAxisExtent: 400,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 1.35,
+            childAspectRatio: 1.5,
           ),
           itemCount: numbers.length,
           itemBuilder: (context, index) {
@@ -86,6 +86,7 @@ class FeaturedNumbersSection extends StatelessWidget {
               features: n.features,
               discount: n.discount,
               isFeatured: n.isFeatured,
+              numerology: n.numerology,
               onTap: n.onTap,
               onAddToCart: n.onAddToCart,
             );
@@ -103,6 +104,7 @@ class FeaturedNumber {
   final List<String> features;
   final double? discount;
   final bool isFeatured;
+  final Map<String, dynamic>? numerology;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
 
@@ -113,6 +115,7 @@ class FeaturedNumber {
     this.features = const [],
     this.discount,
     this.isFeatured = false,
+    this.numerology,
     this.onTap,
     this.onAddToCart,
   });

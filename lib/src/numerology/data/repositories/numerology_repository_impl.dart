@@ -11,7 +11,7 @@ class NumerologyRepositoryImpl implements NumerologyRepository {
   NumerologyRepositoryImpl(this.remoteDataSource);
 
   @override
-  ResultVoid submitConsultation({
+  ResultFuture<String> submitConsultation({
     required String firstName,
     required String lastName,
     required String gender,
@@ -28,7 +28,7 @@ class NumerologyRepositoryImpl implements NumerologyRepository {
     String? purchaseNumber,
   }) async {
     try {
-      await remoteDataSource.submitConsultation(
+      final message = await remoteDataSource.submitConsultation(
         firstName: firstName,
         lastName: lastName,
         gender: gender,
@@ -44,7 +44,7 @@ class NumerologyRepositoryImpl implements NumerologyRepository {
         email: email,
         purchaseNumber: purchaseNumber,
       );
-      return const Right(null);
+      return Right(message);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {

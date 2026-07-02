@@ -162,6 +162,13 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
     final rtpValue = map['readyToPort'] as String?;
 
+    final numerologyMap = <String, dynamic>{
+      ...?(map['numerology'] as Map<String, dynamic>?),
+      if (map['liters'] != null) 'liters': map['liters'],
+      if (map['trap'] != null) 'trap': map['trap'],
+      if (map['score'] != null) 'score': map['score'],
+    };
+
     return PhoneNumberModel(
       id: map['_id'] as String? ?? map['id'] as String?,
       number: map['productMobileNumber'] as String? ??
@@ -178,7 +185,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       features: map['features'] != null
           ? List<String>.from(map['features'] as List<dynamic>)
           : [],
-      numerology: map['numerology'] as Map<String, dynamic>?,
+      numerology: numerologyMap.isEmpty ? null : numerologyMap,
       isRTP: rtpValue == 'rtp',
       isCRTP: rtpValue == 'crtp',
       isFeatured: map['isFeatured'] as bool? ?? false,

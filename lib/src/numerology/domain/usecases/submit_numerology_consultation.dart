@@ -3,15 +3,16 @@ import 'package:numberwale/core/usecases/usecase.dart';
 import 'package:numberwale/core/utils/typedef.dart';
 import 'package:numberwale/src/numerology/domain/repositories/numerology_repository.dart';
 
-/// Use case to submit a numerology consultation request
+/// Use case to submit a numerology consultation request.
+/// Returns the success message from the server.
 class SubmitNumerologyConsultation
-    extends UseCaseWithParams<void, NumerologyConsultationParams> {
+    extends UseCaseWithParams<String, NumerologyConsultationParams> {
   final NumerologyRepository _repository;
 
   SubmitNumerologyConsultation(this._repository);
 
   @override
-  ResultVoid call(NumerologyConsultationParams params) {
+  ResultFuture<String> call(NumerologyConsultationParams params) {
     return _repository.submitConsultation(
       firstName: params.firstName,
       lastName: params.lastName,

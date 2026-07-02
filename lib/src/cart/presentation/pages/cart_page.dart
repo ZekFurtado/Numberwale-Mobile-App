@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:numberwale/core/utils/route_observer.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/cart_item_card.dart';
 import 'package:numberwale/core/widgets/cart_summary_card.dart';
@@ -13,11 +14,39 @@ class CartPage extends StatefulWidget {
   State<CartPage> createState() => _CartPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class _CartPageState extends State<CartPage> with RouteAware {
+  void _refreshCart() {
+    context.read<CartBloc>().add(const LoadCartEvent());
+  }
+
   @override
   void initState() {
     super.initState();
-    context.read<CartBloc>().add(const LoadCartEvent());
+    _refreshCart();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // CartBloc is app-wide and may be sitting on a transient state left
+    // behind by checkout (e.g. CartValidating, CheckingOut) when the user
+    // navigates back here — refresh so the cart list actually shows again
+    // instead of getting stuck on the loading fallback.
+    _refreshCart();
   }
 
   @override

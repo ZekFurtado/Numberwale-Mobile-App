@@ -7,7 +7,10 @@ import 'package:numberwale/core/errors/exceptions.dart';
 import 'package:numberwale/core/utils/backend_config.dart';
 import 'package:numberwale/core/utils/typedef.dart';
 import 'package:numberwale/src/cart/data/models/cart_model.dart';
+import 'package:numberwale/src/cart/data/models/cart_validation_result_model.dart';
 import 'package:numberwale/src/cart/data/models/checkout_result_model.dart';
+import 'package:numberwale/src/cart/data/models/payment_confirmation_result_model.dart';
+import 'package:numberwale/src/cart/data/models/phonepe_verification_result_model.dart';
 
 abstract class CartRemoteDataSource {
   Future<CartModel> getCart();
@@ -18,11 +21,19 @@ abstract class CartRemoteDataSource {
 
   Future<void> clearCart();
 
-  Future<CartModel> validateCart();
+  Future<CartValidationResultModel> validateCart();
 
   Future<CartModel> syncCart(List<DataMap> items);
 
   Future<CheckoutResultModel> checkout(String addressId, String paymentGateway);
+
+  Future<PhonePeVerificationResultModel> verifyPhonePePayment(String orderId);
+
+  Future<PaymentConfirmationResultModel> confirmPayment({
+    required String paymentId,
+    required String orderId,
+    required String gateway,
+  });
 }
 
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
@@ -93,9 +104,19 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         headers: BackendConfig.headers,
       );
 
+      log('removeCartItem status=${response.statusCode} body=${response.body}');
+
       if (response.statusCode != 200 && response.statusCode != 204) {
+        String message = 'Failed to remove cart item';
+        try {
+          final errorData = jsonDecode(response.body) as DataMap;
+          message = errorData['message'] as String? ?? message;
+        } catch (_) {
+          // Response body wasn't JSON (or didn't have `message`) — fall
+          // back to the generic message above.
+        }
         throw ServerException(
-          message: 'Failed to remove cart item',
+          message: message,
           statusCode: response.statusCode.toString(),
         );
       }
@@ -132,7 +153,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   }
 
   @override
-  Future<CartModel> validateCart() async {
+  Future<CartValidationResultModel> validateCart() async {
     try {
       final response = await _client.post(
         Uri.parse(BackendConfig.validateCartUrl),
@@ -142,7 +163,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       if (response.statusCode == 200) {
         final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
-        return CartModel.fromMap(data);
+        return CartValidationResultModel.fromMap(data);
       } else {
         throw ServerException(
           message: 'Failed to validate cart',
@@ -193,10 +214,13 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       final response = await _client.post(
         Uri.parse(BackendConfig.checkoutUrl),
         headers: BackendConfig.headers,
-        body: jsonEncode({'paymentGateway': paymentGateway}),
+        body: jsonEncode({
+          'addressId': addressId,
+          'paymentGateway': paymentGateway,
+        }),
       );
 
-      print(response.body);
+      log('CHECKOUT_DEBUG gateway=$paymentGateway status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
@@ -204,6 +228,72 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       } else {
         throw ServerException(
           message: 'Failed to initiate checkout',
+          statusCode: response.statusCode.toString(),
+        );
+      }
+    } on SocketException {
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: e.toString(), statusCode: '500');
+    }
+  }
+
+  @override
+  Future<PhonePeVerificationResultModel> verifyPhonePePayment(
+    String orderId,
+  ) async {
+    try {
+      final response = await _client.post(
+        Uri.parse(BackendConfig.verifyPhonePePaymentUrl),
+        headers: BackendConfig.headers,
+        body: jsonEncode({'orderId': orderId}),
+      );
+
+      // 200 OK is returned for COMPLETED, PENDING, and FAILED alike — the
+      // outcome is in the body's `paymentStatus`, not the status code.
+      if (response.statusCode == 200) {
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
+        return PhonePeVerificationResultModel.fromMap(responseBody);
+      } else {
+        throw ServerException(
+          message: 'Failed to verify PhonePe payment',
+          statusCode: response.statusCode.toString(),
+        );
+      }
+    } on SocketException {
+      throw const NetworkException(statusCode: '503', message: 'No internet connection');
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: e.toString(), statusCode: '500');
+    }
+  }
+
+  @override
+  Future<PaymentConfirmationResultModel> confirmPayment({
+    required String paymentId,
+    required String orderId,
+    required String gateway,
+  }) async {
+    try {
+      final response = await _client.post(
+        Uri.parse(BackendConfig.paymentSuccessUrl),
+        headers: BackendConfig.headers,
+        body: jsonEncode({
+          'paymentId': paymentId,
+          'orderId': orderId,
+          'gateway': gateway,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final DataMap responseBody = jsonDecode(response.body) as DataMap;
+        return PaymentConfirmationResultModel.fromMap(responseBody);
+      } else {
+        throw ServerException(
+          message: 'Failed to confirm payment',
           statusCode: response.statusCode.toString(),
         );
       }

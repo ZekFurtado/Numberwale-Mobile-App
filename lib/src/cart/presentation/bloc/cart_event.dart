@@ -12,18 +12,12 @@ class LoadCartEvent extends CartEvent {
 }
 
 class AddToCartEvent extends CartEvent {
-  const AddToCartEvent({
-    required this.productId,
-    required this.productNumber,
-    required this.price,
-  });
+  const AddToCartEvent({required this.productId});
 
   final String productId;
-  final String productNumber;
-  final double price;
 
   @override
-  List<Object> get props => [productId, productNumber, price];
+  List<Object> get props => [productId];
 }
 
 class RemoveCartItemEvent extends CartEvent {
@@ -39,6 +33,10 @@ class ClearCartEvent extends CartEvent {
   const ClearCartEvent();
 }
 
+class ValidateCartEvent extends CartEvent {
+  const ValidateCartEvent();
+}
+
 class CheckoutEvent extends CartEvent {
   const CheckoutEvent({
     required this.addressId,
@@ -50,4 +48,28 @@ class CheckoutEvent extends CartEvent {
 
   @override
   List<Object> get props => [addressId, paymentGateway];
+}
+
+class VerifyPhonePePaymentEvent extends CartEvent {
+  const VerifyPhonePePaymentEvent({required this.orderId});
+
+  final String orderId;
+
+  @override
+  List<Object> get props => [orderId];
+}
+
+class ConfirmPaymentEvent extends CartEvent {
+  const ConfirmPaymentEvent({
+    required this.paymentId,
+    required this.orderId,
+    required this.gateway,
+  });
+
+  final String paymentId;
+  final String orderId;
+  final String gateway;
+
+  @override
+  List<Object> get props => [paymentId, orderId, gateway];
 }

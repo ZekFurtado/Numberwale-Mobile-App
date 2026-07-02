@@ -81,22 +81,4 @@ class CartModel extends Cart {
               : toDouble(cartData['sgst']),
     );
   }
-
-  /// Converts this CartModel to a Map
-  DataMap toMap() {
-    return {
-      if (id != null) '_id': id,
-      'items': items
-          .map((item) => (item as CartItemModel).toMap())
-          .toList(),
-      'totalAmount': totalAmount,
-      'itemCount': itemCount,
-      'subtotal': subtotal,
-      'taxAmount': taxAmount,
-      'gst': {
-        'cgst': cgst,
-        'sgst': sgst,
-      },
-    };
-  }
 }

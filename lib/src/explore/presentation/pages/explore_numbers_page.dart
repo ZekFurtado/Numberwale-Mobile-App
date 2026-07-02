@@ -360,13 +360,13 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 1.35,
+                          childAspectRatio: 0.78,
                         ),*/
                         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 250,
+                          maxCrossAxisExtent: 400,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 1.35,
+                          childAspectRatio: 1.5,
                         ),
                         itemCount: products.length,
                         itemBuilder: (context, index) {
@@ -380,6 +380,7 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                                 ? pn.discount.toDouble()
                                 : null,
                             isFeatured: pn.isFeatured,
+                            numerology: pn.numerology,
                             onTap: () => Navigator.pushNamed(
                               context,
                               Routes.productDetail,
@@ -387,11 +388,9 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                             ),
                             onAddToCart: () {
                               if (pn.id != null) {
-                                context.read<CartBloc>().add(AddToCartEvent(
-                                      productId: pn.id!,
-                                      productNumber: pn.number,
-                                      price: pn.price,
-                                    ));
+                                context.read<CartBloc>().add(
+                                      AddToCartEvent(productId: pn.id!),
+                                    );
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                       content:

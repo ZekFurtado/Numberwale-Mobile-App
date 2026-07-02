@@ -28,6 +28,7 @@ import 'package:numberwale/src/profile/presentation/pages/change_password_page.d
 import 'package:numberwale/src/contact/presentation/pages/contact_us_page.dart';
 import 'package:numberwale/src/contact/presentation/pages/careers_page.dart';
 import 'package:numberwale/src/custom_request/presentation/pages/custom_request_page.dart';
+import 'package:numberwale/src/numerology/presentation/pages/numerology_landing_page.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
 import 'package:numberwale/src/home/presentation/pages/categories_page.dart';
 
@@ -74,7 +75,8 @@ class Routes {
 
   // Custom Requests
   static const String customRequest = '/custom-request';
-  static const String numerologyConsultation = '/numerology';
+  static const String numerology = '/numerology';
+  static const String numerologyConsultation = '/numerology/consultation';
 
   // Contact & Support
   static const String contactUs = '/contact';
@@ -145,6 +147,7 @@ class Routes {
           create: (_) => di.sl<CustomRequestBloc>(),
           child: const CustomRequestPage(),
         ),
+        numerology: (context) => const NumerologyLandingPage(),
         numerologyConsultation: (context) => BlocProvider(
           create: (_) => di.sl<NumerologyBloc>(),
           child: const NumerologyPage(),

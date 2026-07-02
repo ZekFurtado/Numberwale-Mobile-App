@@ -1,7 +1,8 @@
 import 'package:numberwale/core/utils/typedef.dart';
 
 abstract class NumerologyRepository {
-  ResultVoid submitConsultation({
+  /// Returns the success message from the server response.
+  ResultFuture<String> submitConsultation({
     required String firstName,
     required String lastName,
     required String gender,

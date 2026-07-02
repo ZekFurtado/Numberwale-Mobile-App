@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/services/authenticated_client.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
+import 'package:numberwale/core/utils/route_observer.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/utils/theme.dart';
 import 'package:numberwale/src/address/presentation/bloc/address_bloc.dart';
@@ -73,6 +74,7 @@ class NumberwaleApp extends StatelessWidget {
             title: 'Numberwale',
             debugShowCheckedModeBanner: false,
             navigatorKey: _navigatorKey,
+            navigatorObservers: [routeObserver],
 
             // Theme configuration
             theme: AppTheme().light(),

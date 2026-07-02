@@ -53,6 +53,9 @@ import '../../src/cart/domain/usecases/checkout.dart';
 import '../../src/cart/domain/usecases/clear_cart.dart';
 import '../../src/cart/domain/usecases/get_cart.dart';
 import '../../src/cart/domain/usecases/remove_cart_item.dart';
+import '../../src/cart/domain/usecases/confirm_payment.dart';
+import '../../src/cart/domain/usecases/validate_cart.dart';
+import '../../src/cart/domain/usecases/verify_phonepe_payment.dart';
 import '../../src/cart/presentation/bloc/cart_bloc.dart';
 import '../../src/orders/data/datasources/order_remote_data_source.dart';
 import '../../src/orders/data/repositories/order_repository_impl.dart';
@@ -140,6 +143,9 @@ Future<void> init() async {
         removeCartItem: sl(),
         clearCart: sl(),
         checkout: sl(),
+        validateCart: sl(),
+        verifyPhonePePayment: sl(),
+        confirmPayment: sl(),
     ))
 
     /// Orders
@@ -206,6 +212,9 @@ Future<void> init() async {
     ..registerLazySingleton(() => RemoveCartItem(sl()))
     ..registerLazySingleton(() => ClearCart(sl()))
     ..registerLazySingleton(() => Checkout(sl()))
+    ..registerLazySingleton(() => ValidateCart(sl()))
+    ..registerLazySingleton(() => VerifyPhonePePayment(sl()))
+    ..registerLazySingleton(() => ConfirmPayment(sl()))
 
     /// Orders
     ..registerLazySingleton(() => GetOrders(sl()))
@@ -246,8 +255,7 @@ Future<void> init() async {
         () => ProductRepositoryImpl(sl()))
 
     /// Cart
-    ..registerLazySingleton<CartRepository>(
-        () => CartRepositoryImpl(sl(), sl<SharedPreferences>()))
+    ..registerLazySingleton<CartRepository>(() => CartRepositoryImpl(sl()))
 
     /// Orders
     ..registerLazySingleton<OrderRepository>(

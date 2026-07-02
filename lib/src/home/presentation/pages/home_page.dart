@@ -5,8 +5,8 @@ import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/category_section.dart';
 import 'package:numberwale/core/widgets/featured_numbers_section.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
+import 'package:numberwale/core/widgets/image_banner_carousel.dart';
 import 'package:numberwale/core/widgets/number_search_bar.dart';
-import 'package:numberwale/core/widgets/promotional_banner.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
@@ -20,6 +20,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
+
+  /// Local banner images shown in the homescreen carousel.
+  static const List<String> _bannerAssets = [
+    'assets/banners/banner1.png',
+    'assets/banners/banner2.png',
+    'assets/banners/banner3.jpeg',
+    'assets/banners/banner4.gif',
+    'assets/banners/banner6.jpeg',
+    'assets/banners/banner8.jpeg',
+  ];
 
 
   @override
@@ -63,45 +73,6 @@ class _HomePageState extends State<HomePage> {
     if (lower == 'palindrome') return Icons.sync;
     if (lower == 'numerology') return Icons.calculate;
     return Icons.phone_android;
-  }
-
-  /// Returns the 3 hardcoded promotional banners used as mock/fallback data.
-  List<PromotionalBanner> _getMockPromotionalBanners(BuildContext context) {
-    final theme = Theme.of(context);
-    return [
-      PromotionalBanner(
-        title: 'New Year Mega Sale',
-        subtitle: 'Get up to 50% off on VIP numbers',
-        buttonText: 'Shop Now',
-        icon: Icons.celebration,
-        backgroundColor: theme.colorScheme.primaryContainer,
-        onTap: () {
-          // Navigate to offers
-        },
-      ),
-      PromotionalBanner(
-        title: 'Free Delivery',
-        subtitle: 'On all orders this week',
-        buttonText: 'Explore',
-        icon: Icons.local_shipping,
-        backgroundColor: theme.colorScheme.secondaryContainer,
-        textColor: theme.colorScheme.onSecondaryContainer,
-        onTap: () {
-          // Navigate to all numbers
-        },
-      ),
-      PromotionalBanner(
-        title: 'Numerology Consultation',
-        subtitle: 'Expert advice on lucky numbers',
-        buttonText: 'Book Now',
-        icon: Icons.auto_awesome,
-        backgroundColor: theme.colorScheme.tertiaryContainer,
-        textColor: theme.colorScheme.onTertiaryContainer,
-        onTap: () {
-          Navigator.pushNamed(context, Routes.numerologyConsultation);
-        },
-      ),
-    ];
   }
 
   /// Returns mock category items used as fallback when the API list is empty.
@@ -190,30 +161,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildContent(BuildContext context, HomeState state) {
     final theme = Theme.of(context);
 
-    final List<PromotionalBanner> banners;
     final List<CategoryItem> categories;
     final List<FeaturedNumber> discountedNumbers;
 
     if (state is HomeDataLoaded) {
-      banners = state.banners.isEmpty
-          ? _getMockPromotionalBanners(context)
-          : state.banners.map((b) {
-              return PromotionalBanner(
-                title: b.title,
-                subtitle: b.subtitle,
-                buttonText: b.buttonText,
-                backgroundColor: _parseColor(
-                    b.backgroundColor, theme.colorScheme.primaryContainer),
-                textColor: _parseColor(
-                    b.textColor, theme.colorScheme.onPrimaryContainer),
-                onTap: () {
-                  if (b.actionUrl != null && b.actionUrl!.isNotEmpty) {
-                    Navigator.pushNamed(context, b.actionUrl!);
-                  }
-                },
-              );
-            }).toList();
-
       categories = state.categories.isEmpty
           ? _getMockCategories(context).take(4).toList()
           : state.categories.take(4).map((cat) {
@@ -234,6 +185,7 @@ class _HomePageState extends State<HomePage> {
           features: pn.features,
           discount: pn.discount > 0 ? pn.discount.toDouble() : null,
           isFeatured: pn.isFeatured,
+          numerology: pn.numerology,
           onTap: () => Navigator.pushNamed(
             context,
             Routes.productDetail,
@@ -241,18 +193,17 @@ class _HomePageState extends State<HomePage> {
           ),
           onAddToCart: () => context.read<CartBloc>().add(AddToCartEvent(
                 productId: pn.id ?? pn.number,
-                productNumber: pn.number,
-                price: pn.price,
               )),
         );
       }).toList();
     } else {
-      banners = _getMockPromotionalBanners(context);
       categories = _getMockCategories(context).take(4).toList();
       discountedNumbers = [];
     }
 
     return Scaffold(
+      backgroundColor: Color(0xFFfef5ee),
+      drawer: const _AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
           context
@@ -330,8 +281,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 8),
 
                   // Promotional Banners Carousel
-                  PromotionalCarousel(
-                    banners: banners,
+                  const ImageBannerCarousel(
+                    assetPaths: _bannerAssets,
                   ),
                   const SizedBox(height: 32),
 
@@ -360,6 +311,50 @@ class _HomePageState extends State<HomePage> {
 
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppDrawer extends StatelessWidget {
+  const _AppDrawer();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(Icons.phone_android, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Numberwale',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('Numerology'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Routes.numerology);
+              },
             ),
           ],
         ),

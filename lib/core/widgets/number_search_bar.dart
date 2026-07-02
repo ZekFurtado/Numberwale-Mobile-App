@@ -58,8 +58,8 @@ class NumberSearchBar extends StatelessWidget {
                   tooltip: 'Advanced Filters',
                 )
               : null,
-          filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest,
+          // filled: true,
+          // fillColor: theme.colorScheme.surfaceContainerHighest,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,

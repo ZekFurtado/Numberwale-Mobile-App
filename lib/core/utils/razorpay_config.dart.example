@@ -1,0 +1,4 @@
+class RazorpayConfig {
+  static const keyId = 'YOUR_RAZORPAY_KEY_ID';
+  // KEY_SECRET must never be stored in the app — it is server-side only
+}

@@ -11,6 +11,17 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
+# Razorpay
+-keepclassmembers class com.razorpay.** { *; }
+-keep class com.razorpay.** { *; }
+-dontwarn com.razorpay.**
+-keep @interface proguard.annotation.Keep
+-keep @proguard.annotation.Keep class *
+
+# PhonePe
+-keep class com.phonepe.** { *; }
+-dontwarn com.phonepe.**
+
 # Flutter Play Core split-install (not used in this app but referenced by the Flutter engine)
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallException
