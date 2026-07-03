@@ -17,8 +17,19 @@ class AddressListPage extends StatelessWidget {
   }
 }
 
-class _AddressListView extends StatelessWidget {
+class _AddressListView extends StatefulWidget {
   const _AddressListView();
+
+  @override
+  State<_AddressListView> createState() => _AddressListViewState();
+}
+
+class _AddressListViewState extends State<_AddressListView> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AddressBloc>().add(const GetAddressesEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
