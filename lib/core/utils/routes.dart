@@ -15,6 +15,8 @@ import 'package:numberwale/src/authentication/presentation/pages/otp_verificatio
 import 'package:numberwale/src/authentication/presentation/pages/forgot_password_page.dart';
 import 'package:numberwale/src/authentication/presentation/pages/reset_password_page.dart';
 import 'package:numberwale/src/products/presentation/pages/product_detail_page.dart';
+import 'package:numberwale/src/products/presentation/pages/advanced_search_page.dart';
+import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/cart/presentation/pages/cart_page.dart';
 import 'package:numberwale/src/checkout/presentation/pages/address_selection_page.dart';
 import 'package:numberwale/src/checkout/presentation/pages/order_summary_page.dart';
@@ -27,6 +29,10 @@ import 'package:numberwale/src/profile/presentation/pages/edit_profile_page.dart
 import 'package:numberwale/src/profile/presentation/pages/change_password_page.dart';
 import 'package:numberwale/src/contact/presentation/pages/contact_us_page.dart';
 import 'package:numberwale/src/contact/presentation/pages/careers_page.dart';
+import 'package:numberwale/src/info/presentation/pages/faq_page.dart';
+import 'package:numberwale/src/info/presentation/pages/about_us_page.dart';
+import 'package:numberwale/src/info/presentation/pages/privacy_policy_page.dart';
+import 'package:numberwale/src/info/presentation/pages/terms_and_conditions_page.dart';
 import 'package:numberwale/src/custom_request/presentation/pages/custom_request_page.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_landing_page.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
@@ -152,6 +158,12 @@ class Routes {
           create: (_) => di.sl<NumerologyBloc>(),
           child: const NumerologyPage(),
         ),
+
+        // CMS Pages
+        faq: (context) => const FaqPage(),
+        about: (context) => const AboutUsPage(),
+        privacyPolicy: (context) => const PrivacyPolicyPage(),
+        termsAndConditions: (context) => const TermsAndConditionsPage(),
       };
 
   /// Generate routes for dynamic navigation (with parameters)
@@ -161,6 +173,13 @@ class Routes {
     final args = settings.arguments;
 
     switch (routeName) {
+      // Advanced Search (returns the built ProductFilters via pop)
+      case advancedSearch:
+        return MaterialPageRoute<ProductFilters>(
+          builder: (_) => const AdvancedSearchPage(),
+          settings: settings,
+        );
+
       // Product Detail (with phoneNumber parameter)
       case productDetail:
         if (args is String) {

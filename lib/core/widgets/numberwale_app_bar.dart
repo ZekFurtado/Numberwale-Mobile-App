@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/cart_badge.dart';
+import 'package:numberwale/src/products/domain/entities/product_filters.dart';
+import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
 
 class NumberwaleAppBar extends StatelessWidget implements PreferredSizeWidget {
   const NumberwaleAppBar({
@@ -25,8 +28,14 @@ class NumberwaleAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (showSearch)
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {
-              Navigator.pushNamed(context, Routes.advancedSearch);
+            onPressed: () async {
+              final result = await Navigator.pushNamed<ProductFilters>(
+                context,
+                Routes.advancedSearch,
+              );
+              if (result != null && context.mounted) {
+                context.read<ProductBloc>().add(ApplyFiltersEvent(filters: result));
+              }
             },
             tooltip: 'Search',
           ),

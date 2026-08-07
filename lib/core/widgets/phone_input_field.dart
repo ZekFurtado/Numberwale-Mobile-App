@@ -7,7 +7,7 @@ class PhoneInputField extends StatelessWidget {
     required this.controller,
     this.validator,
     this.onChanged,
-    this.initialCountryCode = 'US',
+    this.initialCountryCode = 'IN',
     this.enabled = true,
   });
 

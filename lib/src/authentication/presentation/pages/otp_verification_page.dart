@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/otp_input_field.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
+import 'package:smart_auth/smart_auth.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   const OTPVerificationPage({super.key});
@@ -18,16 +20,41 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   int _secondsRemaining = 60;
   Timer? _timer;
 
+  final _smartAuth = SmartAuth.instance;
+  final _otpAutoFillController = StreamController<String>.broadcast();
+
   @override
   void initState() {
     super.initState();
     _startTimer();
+    _listenForOtpAutofill();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _smartAuth.removeUserConsentApiListener();
+    _otpAutoFillController.close();
     super.dispose();
+  }
+
+  // Listens for the incoming OTP SMS via Android's SMS User Consent API.
+  // This triggers a system dialog asking the user to allow this one message
+  // to be read - no SMS permission is declared in the app manifest. On iOS
+  // autofill is handled natively via the AutofillHints.oneTimeCode field.
+  Future<void> _listenForOtpAutofill() async {
+    try {
+      final result = await _smartAuth.getSmsWithUserConsentApi();
+      if (!mounted) return;
+      if (result.hasData) {
+        final code = result.requireData.code;
+        if (code != null && code.isNotEmpty) {
+          _otpAutoFillController.add(code);
+        }
+      }
+    } catch (e) {
+      log('SMS autofill unavailable: $e');
+    }
   }
 
   void _startTimer() {
@@ -76,6 +103,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         .read<AuthenticationBloc>()
         .add(ResendOTPEvent(contact: contact, isEmail: isEmail));
     _startTimer();
+    _listenForOtpAutofill();
   }
 
   @override
@@ -175,6 +203,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       });
                     },
                     hasError: _hasError,
+                    autoFillStream: _otpAutoFillController.stream,
                   ),
                   const SizedBox(height: 32),
                   if (_secondsRemaining > 0)

@@ -12,7 +12,9 @@ import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 
 abstract class ProductRemoteDataSource {
   Future<ProductResultModel> getProducts(ProductFilters filters);
+
   Future<ProductResultModel> getDiscountedProducts(ProductFilters filters);
+
   Future<ProductModel> getProductByNumber(String number);
 }
 
@@ -24,12 +26,15 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   @override
   Future<ProductResultModel> getProducts(ProductFilters filters) async {
     try {
-      final uri = Uri.parse(BackendConfig.getProductsUrl)
-          .replace(queryParameters: filters.toQueryParams());
+      final uri = Uri.parse(
+        BackendConfig.getProductsUrl,
+      ).replace(queryParameters: filters.toQueryParams());
 
       log('[ProductDS] GET $uri');
       final response = await _client.get(uri, headers: BackendConfig.headers);
-      log('[ProductDS] status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 300))}');
+      log(
+        '[ProductDS] status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 300))}',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;
@@ -37,7 +42,8 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       } else {
         final errorData = jsonDecode(response.body) as DataMap;
         throw ServerException(
-          message: errorData['message'] as String? ?? 'Failed to fetch products',
+          message:
+              errorData['message'] as String? ?? 'Failed to fetch products',
           statusCode: response.statusCode.toString(),
         );
       }
@@ -54,10 +60,13 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   }
 
   @override
-  Future<ProductResultModel> getDiscountedProducts(ProductFilters filters) async {
+  Future<ProductResultModel> getDiscountedProducts(
+    ProductFilters filters,
+  ) async {
     try {
-      final uri = Uri.parse(BackendConfig.getDiscountedProductsUrl)
-          .replace(queryParameters: filters.toQueryParams());
+      final uri = Uri.parse(
+        BackendConfig.getDiscountedProductsUrl,
+      ).replace(queryParameters: filters.toQueryParams());
 
       final response = await _client.get(uri, headers: BackendConfig.headers);
 
@@ -67,7 +76,9 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       } else {
         final errorData = jsonDecode(response.body) as DataMap;
         throw ServerException(
-          message: errorData['message'] as String? ?? 'Failed to fetch discounted products',
+          message:
+              errorData['message'] as String? ??
+              'Failed to fetch discounted products',
           statusCode: response.statusCode.toString(),
         );
       }

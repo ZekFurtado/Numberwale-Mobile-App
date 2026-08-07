@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/src/profile/presentation/bloc/profile_bloc.dart';
 
 class EditProfilePage extends StatelessWidget {
@@ -37,7 +36,7 @@ class _EditProfileViewState extends State<_EditProfileView> {
     _mobileController = TextEditingController();
     _companyController = TextEditingController();
     _gstController = TextEditingController();
-    di.sl<ProfileBloc>().add(const LoadProfileEvent());
+    context.read<ProfileBloc>().add(const LoadProfileEvent());
   }
 
   @override

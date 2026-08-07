@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:numberwale/core/services/injection_container.dart' as di;
+import 'package:numberwale/core/utils/external_links.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/src/account/presentation/widgets/account_menu_item.dart';
 import 'package:numberwale/src/account/presentation/widgets/profile_header.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
 import 'package:numberwale/src/profile/presentation/bloc/profile_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -16,8 +17,22 @@ class AccountPage extends StatelessWidget {
   }
 }
 
-class _AccountView extends StatelessWidget {
+class _AccountView extends StatefulWidget {
   const _AccountView();
+
+  @override
+  State<_AccountView> createState() => _AccountViewState();
+}
+
+class _AccountViewState extends State<_AccountView> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ProfileBloc>().add(const LoadProfileEvent());
+  }
+
+  Future<void> _openUrl(String url) =>
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -54,12 +69,30 @@ class _AccountView extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Profile header — shows real data from ProfileBloc
+          // Profile header — shows real data from ProfileBloc, falling back
+          // to the user object AuthenticationBloc already has immediately
+          // after login/OTP verification while the profile fetch is in
+          // flight (or if it fails).
           BlocBuilder<ProfileBloc, ProfileState>(
             builder: (context, state) {
               String name = 'Loading...';
               String email = '';
               String phone = '';
+
+              final authState = context.watch<AuthenticationBloc>().state;
+              final fallbackUser = authState is LoggedIn
+                  ? authState.user
+                  : authState is OTPVerified
+                      ? authState.user
+                      : null;
+              if (fallbackUser != null) {
+                name = fallbackUser.name ?? '';
+                email = fallbackUser.email ?? '';
+                phone = fallbackUser.phone != null
+                    ? '+91 ${fallbackUser.phone}'
+                    : '';
+              }
+
               if (state is ProfileLoaded || state is ProfileUpdated) {
                 final profile = state is ProfileLoaded
                     ? state.profile
@@ -237,19 +270,13 @@ class _AccountView extends StatelessWidget {
                       AccountMenuItem(
                         icon: Icons.privacy_tip_outlined,
                         title: 'Privacy Policy',
-                        onTap: () {
-                          Navigator.pushNamed(context, Routes.privacyPolicy);
-                        },
+                        onTap: () => _openUrl(ExternalLinks.privacyPolicy),
                       ),
                       AccountMenuItem(
                         icon: Icons.description_outlined,
                         title: 'Terms & Conditions',
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            Routes.termsAndConditions,
-                          );
-                        },
+                        onTap: () =>
+                            _openUrl(ExternalLinks.termsAndConditions),
                         showDivider: false,
                       ),
                     ],

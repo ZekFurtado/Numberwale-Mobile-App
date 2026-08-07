@@ -132,6 +132,13 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
     }
   }
 
+  Future<void> _openAdvancedSearch() async {
+    final result = await Navigator.pushNamed<ProductFilters>(context, Routes.advancedSearch);
+    if (result != null && mounted) {
+      context.read<ProductBloc>().add(ApplyFiltersEvent(filters: result));
+    }
+  }
+
   void _clearFilters() {
     setState(() {
       _uiFilters = const NumberFilters();
@@ -234,6 +241,16 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
                 IconButton.filled(
                   onPressed: _openSortSheet,
                   icon: const Icon(Icons.sort),
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    foregroundColor: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: _openAdvancedSearch,
+                  icon: const Icon(Icons.manage_search),
+                  tooltip: 'Advanced Search',
                   style: IconButton.styleFrom(
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     foregroundColor: theme.colorScheme.onSurfaceVariant,

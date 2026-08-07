@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:equatable/equatable.dart';
+import 'package:numberwale/src/products/domain/entities/advanced_search_filters.dart';
 
 /// Filters for product listing API
 class ProductFilters extends Equatable {
@@ -13,6 +12,7 @@ class ProductFilters extends Equatable {
   final String? readyToPort; // 'rtp' or 'crtp'
   final bool? random;
   final String? seed;
+  final AdvancedSearchFilters? advanced;
   final int page;
   final int limit;
 
@@ -26,6 +26,7 @@ class ProductFilters extends Equatable {
     this.readyToPort,
     this.random,
     this.seed,
+    this.advanced,
     this.page = 1,
     this.limit = 20,
   });
@@ -40,6 +41,7 @@ class ProductFilters extends Equatable {
     String? readyToPort,
     bool? random,
     String? seed,
+    AdvancedSearchFilters? advanced,
     int? page,
     int? limit,
   }) {
@@ -53,6 +55,7 @@ class ProductFilters extends Equatable {
       readyToPort: readyToPort ?? this.readyToPort,
       random: random ?? this.random,
       seed: seed ?? this.seed,
+      advanced: advanced ?? this.advanced,
       page: page ?? this.page,
       limit: limit ?? this.limit,
     );
@@ -63,10 +66,19 @@ class ProductFilters extends Equatable {
       'page': page.toString(),
       'limit': limit.toString(),
     };
+
+    // The API docs describe `search` as a single JSON-encoded string, but
+    // that's not what the live backend parses — verified empirically that
+    // it expects bracket-notation params instead (search[globalSearch]=...,
+    // search[advanced][startsWith]=...), same convention Express's `qs`
+    // parser uses natively.
     if (search != null && search!.isNotEmpty) {
-      // params['search'] = jsonEncode({'globalSearch': search});
-      params['search[globalSearch]'] = search ?? "";
+      params['search[globalSearch]'] = search!;
     }
+    if (advanced != null && !advanced!.isEmpty) {
+      params.addAll(advanced!.toQueryParams());
+    }
+
     if (category != null) params['category'] = category!;
     if (minPrice != null && maxPrice != null) {
       params['priceRange'] = '${minPrice!.toInt()}-${maxPrice!.toInt()}';
@@ -85,16 +97,17 @@ class ProductFilters extends Equatable {
 
   @override
   List<Object?> get props => [
-        search,
-        category,
-        minPrice,
-        maxPrice,
-        sortBy,
-        sortPrice,
-        readyToPort,
-        random,
-        seed,
-        page,
-        limit,
-      ];
+    search,
+    category,
+    minPrice,
+    maxPrice,
+    sortBy,
+    sortPrice,
+    readyToPort,
+    random,
+    seed,
+    advanced,
+    page,
+    limit,
+  ];
 }
