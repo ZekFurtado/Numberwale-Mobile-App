@@ -10,6 +10,7 @@ class PasswordInputField extends StatefulWidget {
     this.showRequirements = false,
     this.validator,
     this.onChanged,
+    this.onSubmitted,
   });
 
   final TextEditingController controller;
@@ -19,6 +20,10 @@ class PasswordInputField extends StatefulWidget {
   final bool showRequirements;
   final String? Function(String?)? validator;
   final Function(String)? onChanged;
+
+  /// Called when the user presses the keyboard's "done" action while this
+  /// field is focused (e.g. to submit the surrounding form).
+  final VoidCallback? onSubmitted;
 
   @override
   State<PasswordInputField> createState() => _PasswordInputFieldState();
@@ -129,6 +134,9 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
           obscureText: _obscureText,
           validator: widget.validator,
           onChanged: widget.onChanged,
+          textInputAction: TextInputAction.done,
+          onFieldSubmitted:
+              widget.onSubmitted == null ? null : (_) => widget.onSubmitted!(),
           decoration: InputDecoration(
             labelText: widget.labelText,
             hintText: widget.hintText ?? 'Enter your password',

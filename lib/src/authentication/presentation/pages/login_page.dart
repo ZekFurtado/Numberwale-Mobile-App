@@ -187,6 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                   controller: _passwordController,
                   labelText: 'Password',
                   validator: _validatePassword,
+                  onSubmitted: isLoading ? null : _handleLogin,
                 ),
                 const SizedBox(height: 12),
 
