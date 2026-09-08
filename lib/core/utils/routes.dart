@@ -38,6 +38,7 @@ import 'package:numberwale/src/custom_request/presentation/pages/custom_request_
 import 'package:numberwale/src/numerology/presentation/pages/numerology_landing_page.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
 import 'package:numberwale/src/home/presentation/pages/categories_page.dart';
+import 'package:numberwale/src/services/presentation/pages/smart_ivr_page.dart';
 
 class Routes {
   // Splash & Onboarding
@@ -89,6 +90,9 @@ class Routes {
   // Contact & Support
   static const String contactUs = '/contact';
   static const String careers = '/careers';
+
+  // Business Services (drawer "Products" section)
+  static const String smartIvr = '/products/smart-ivr';
 
   // CMS Pages
   static const String faq = '/faq';
@@ -166,6 +170,9 @@ class Routes {
           create: (_) => di.sl<NumerologyBloc>(),
           child: const NumerologyPage(),
         ),
+
+        // Business Services
+        smartIvr: (context) => const SmartIvrPage(),
 
         // CMS Pages
         faq: (context) => const FaqPage(),

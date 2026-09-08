@@ -469,7 +469,12 @@ class _AppDrawer extends StatelessWidget {
             ),
             const Divider(height: 1, color: _dividerColor),
             _ProductsSection(
-              onItemTap: () => Navigator.pop(context),
+              onItemTap: (item) {
+                Navigator.pop(context);
+                if (item == 'Smart IVR') {
+                  Navigator.pushNamed(context, Routes.smartIvr);
+                }
+              },
             ),
             const Divider(height: 1, color: _dividerColor),
             ListTile(
@@ -671,12 +676,13 @@ class _NewBadge extends StatelessWidget {
 }
 
 /// The "Products" expandable section (Smart IVR, SMS Solutions, WhatsApp
-/// API). These sub-pages aren't built yet, so [onItemTap] only closes the
-/// drawer for now.
+/// API). Only Smart IVR has a destination page so far; [onItemTap] is
+/// called with the tapped item's label either way so the caller can route
+/// (or just close the drawer for the not-yet-built ones).
 class _ProductsSection extends StatefulWidget {
   const _ProductsSection({required this.onItemTap});
 
-  final VoidCallback onItemTap;
+  final ValueChanged<String> onItemTap;
 
   @override
   State<_ProductsSection> createState() => _ProductsSectionState();
@@ -721,7 +727,7 @@ class _ProductsSectionState extends State<_ProductsSection> {
         if (_expanded)
           ..._items.map(
             (item) => InkWell(
-              onTap: widget.onItemTap,
+              onTap: () => widget.onItemTap(item),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(32, 12, 20, 12),
                 child: Text(
