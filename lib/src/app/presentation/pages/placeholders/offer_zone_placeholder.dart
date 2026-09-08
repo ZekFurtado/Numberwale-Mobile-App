@@ -3,8 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
-import 'package:numberwale/core/widgets/product_card.dart';
+import 'package:numberwale/core/widgets/vip_number_card.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
+import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
 
@@ -31,6 +32,11 @@ class _OfferZoneContent extends StatefulWidget {
 class _OfferZoneContentState extends State<_OfferZoneContent> {
   final ScrollController _scrollController = ScrollController();
 
+  /// The API doesn't return a deal deadline, so each discounted number gets
+  /// a stable (per session), deterministic "ends in" countdown seeded from
+  /// its id — cached here so it doesn't reshuffle on every rebuild.
+  final Map<String, DateTime> _dealEndsAtCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +62,16 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
         state.hasNextPage) {
       context.read<ProductBloc>().add(const LoadMoreProductsEvent());
     }
+  }
+
+  DateTime _dealEndsAtFor(String seed) {
+    return _dealEndsAtCache.putIfAbsent(seed, () {
+      const minSeconds = 6 * 3600;
+      const maxSeconds = 5 * 24 * 3600;
+      final secondsFromNow =
+          minSeconds + (seed.hashCode.abs() % (maxSeconds - minSeconds));
+      return DateTime.now().add(Duration(seconds: secondsFromNow));
+    });
   }
 
   @override
@@ -87,7 +103,7 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
           );
         }
 
-        List<dynamic> products = [];
+        List<PhoneNumber> products = [];
         int totalCount = 0;
         bool isLoadingMore = false;
 
@@ -137,35 +153,26 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
               ),
             ),
 
-            // Product grid
+            // Product list
             Expanded(
-              child: GridView.builder(
+              child: ListView.separated(
                 controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                /*gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.78,
-                ),*/
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 400,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1.5,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 itemCount: products.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final pn = products[index];
-                  return ProductCard(
+                  final hasDiscount = pn.discount > 0 && pn.originalPrice != null;
+                  return VipNumberCard(
                     phoneNumber: pn.number,
-                    price: pn.originalPrice?.toDouble() ?? pn.price,
+                    price: pn.price,
                     category: pn.category,
-                    features: List<String>.from(pn.features),
-                    discount: pn.discount > 0 ? pn.discount.toDouble() : null,
-                    isFeatured: pn.isFeatured,
                     numerology: pn.numerology,
+                    originalPrice: pn.originalPrice,
+                    discount: hasDiscount ? pn.discount : null,
+                    dealEndsAt:
+                        hasDiscount ? _dealEndsAtFor(pn.id ?? pn.number) : null,
                     onTap: () => Navigator.pushNamed(
                       context,
                       Routes.productDetail,
