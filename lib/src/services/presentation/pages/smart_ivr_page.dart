@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:numberwale/src/services/presentation/widgets/step_walkthrough.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _orange = Color(0xFFFF8400);
-const _titleGray = Color(0xFF474B67);
-const _bodyGray = Color(0xFF8A8A8A);
+const _orange = kServiceOrange;
+const _titleGray = kServiceTitleGray;
+const _bodyGray = kServiceBodyGray;
 
 const _playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.vipmobilenumbers.numberwale';
@@ -14,28 +15,6 @@ class _Feature {
   final String icon;
   final String title;
   final String text;
-}
-
-class _Step {
-  const _Step({
-    required this.number,
-    required this.title,
-    required this.text,
-    required this.image,
-    this.isSvg = false,
-    this.svgData,
-    this.leadingIcon,
-  });
-
-  final int number;
-  final String title;
-  final String text;
-  final String image;
-  final bool isSvg;
-
-  /// Raw (percent-encoded) inline SVG markup, used instead of [image] when set.
-  final String? svgData;
-  final Widget? leadingIcon;
 }
 
 const _features = [
@@ -83,10 +62,11 @@ const _introText =
     'then reviewed upon for action.';
 
 final _steps = [
-  const _Step(
+  const StepItem(
     number: 1,
     title: 'Pick a number',
-    image: 'https://www.numberwale.com/assets/PICK-A-NUMBERV2-Hd49sha-.png',
+    media: NetworkStepImage(
+        url: 'https://www.numberwale.com/assets/PICK-A-NUMBERV2-Hd49sha-.png'),
     text:
         'Having your own number is one of the benefits of getting your Number '
         'Wale business phone number which could either be a toll-free or '
@@ -96,11 +76,12 @@ final _steps = [
         'contacts and users and define a role for each user, making it a '
         'seamless process to begin with.',
   ),
-  const _Step(
+  const StepItem(
     number: 2,
     title: 'Design your custom IVR',
-    image:
-        'https://www.numberwale.com/assets/DESIGN-YOUR-CUSTOM-IVR-DPdiX6Lr.png',
+    media: NetworkStepImage(
+        url:
+            'https://www.numberwale.com/assets/DESIGN-YOUR-CUSTOM-IVR-DPdiX6Lr.png'),
     text:
         'Like customization or have a likeness towards a favourite digit? Get '
         'it customized through professional IVR for your Number Wale business '
@@ -111,11 +92,12 @@ final _steps = [
         'location-based, contact-based or time-based IVR for your business, '
         'depending on your requirement and business.',
   ),
-  const _Step(
+  const StepItem(
     number: 3,
     title: 'Add departments and agents',
-    image:
-        'https://www.numberwale.com/assets/ADD-DEPARTMENTS-AND-AGENTS-C4YegFSB.png',
+    media: NetworkStepImage(
+        url:
+            'https://www.numberwale.com/assets/ADD-DEPARTMENTS-AND-AGENTS-C4YegFSB.png'),
     text:
         'To make the entire telecommunication process efficient, every '
         'different department can be categorized in your professional IVR '
@@ -124,10 +106,11 @@ final _steps = [
         'super admin, the moderator or basic. Also, create extension numbers '
         'for each user for direct contact.',
   ),
-  _Step(
+  StepItem(
     number: 4,
     title: 'Publish the number',
-    image: 'https://www.numberwale.com/assets/PUBLISH-THE-NUMBER-B9IOH8gx.png',
+    media: const NetworkStepImage(
+        url: 'https://www.numberwale.com/assets/PUBLISH-THE-NUMBER-B9IOH8gx.png'),
     text:
         'Get your Number Wale phone number published on online and offline '
         'forums to popularise it. Such forums include your website, '
@@ -135,11 +118,11 @@ final _steps = [
         'recognition through your centralised phone number.',
     leadingIcon: const Icon(Icons.campaign, color: _orange, size: 22),
   ),
-  _Step(
+  StepItem(
     number: 5,
     title: 'View and subscribe for call reports',
-    image: 'https://www.numberwale.com/assets/05-Ckf8-4m-.svg',
-    isSvg: true,
+    media: const _StepSvgImage(
+        networkUrl: 'https://www.numberwale.com/assets/05-Ckf8-4m-.svg'),
     text:
         'Subscribe to your Number Wale for call reports. These reports help '
         'you understand the interaction journey better and make amends '
@@ -153,12 +136,10 @@ final _steps = [
       child: const Icon(Icons.check, color: Colors.white, size: 16),
     ),
   ),
-  const _Step(
+  const StepItem(
     number: 6,
     title: 'Remarket the callers',
-    image: '',
-    isSvg: true,
-    svgData: _remarketSvg,
+    media: _StepSvgImage(rawSvg: _remarketSvg),
     text:
         'Looking for a way to reconnect with your callers? It is easier to '
         'reach back to your callers through SMS and Facebook Remarketing. '
@@ -243,10 +224,7 @@ class SmartIvrPage extends StatelessWidget {
                 style: TextStyle(color: _bodyGray, fontSize: 14, height: 1.5),
               ),
               const SizedBox(height: 32),
-              for (var i = 0; i < _steps.length; i++) ...[
-                _StepBlock(step: _steps[i]),
-                if (i < _steps.length - 1) const _StepConnector(),
-              ],
+              StepWalkthrough(steps: _steps),
             ],
           ),
         ),
@@ -365,147 +343,34 @@ class _FeatureCard extends StatelessWidget {
   }
 }
 
-class _StepBlock extends StatelessWidget {
-  const _StepBlock({required this.step});
+/// Step media for the two SVG-based steps: either a network-hosted SVG or
+/// raw (percent-encoded) inline SVG markup.
+class _StepSvgImage extends StatelessWidget {
+  const _StepSvgImage({this.networkUrl, this.rawSvg})
+      : assert(networkUrl != null || rawSvg != null);
 
-  final _Step step;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _StepImage(step: step),
-            ),
-            Positioned(
-              top: -12,
-              left: -12,
-              child: Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: _orange,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${step.number}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            if (step.leadingIcon != null) ...[
-              step.leadingIcon!,
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: Text(
-                step.title.toUpperCase(),
-                style: const TextStyle(
-                  color: _titleGray,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          step.text,
-          textAlign: TextAlign.justify,
-          style: const TextStyle(color: _bodyGray, fontSize: 14, height: 1.5),
-        ),
-      ],
-    );
-  }
-}
-
-class _StepImage extends StatelessWidget {
-  const _StepImage({required this.step});
-
-  final _Step step;
+  final String? networkUrl;
+  final String? rawSvg;
 
   @override
   Widget build(BuildContext context) {
     const height = 200.0;
-
-    if (step.svgData != null) {
+    if (rawSvg != null) {
       return SvgPicture.string(
-        Uri.decodeComponent(step.svgData!),
+        Uri.decodeComponent(rawSvg!),
         width: double.infinity,
         height: height,
         fit: BoxFit.contain,
       );
     }
-
-    if (step.isSvg) {
-      return SvgPicture.network(
-        step.image,
-        width: double.infinity,
-        height: height,
-        fit: BoxFit.contain,
-        placeholderBuilder: (context) => const SizedBox(
-          height: height,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-
-    return Image.network(
-      step.image,
+    return SvgPicture.network(
+      networkUrl!,
       width: double.infinity,
       height: height,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const SizedBox(
-          height: height,
-          child: Center(child: CircularProgressIndicator()),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) => Container(
+      fit: BoxFit.contain,
+      placeholderBuilder: (context) => const SizedBox(
         height: height,
-        color: const Color(0xFFF3F4F6),
-        child: const Center(
-          child: Icon(Icons.image_not_supported_outlined, size: 40),
-        ),
-      ),
-    );
-  }
-}
-
-/// Vertical stand-in for the wavy dashed connector drawn between steps on
-/// the (horizontally laid out) desktop site.
-class _StepConnector extends StatelessWidget {
-  const _StepConnector();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 2, height: 16, color: _orange.withValues(alpha: 0.4)),
-            const Icon(Icons.keyboard_arrow_down, color: _orange, size: 20),
-          ],
-        ),
+        child: Center(child: CircularProgressIndicator()),
       ),
     );
   }

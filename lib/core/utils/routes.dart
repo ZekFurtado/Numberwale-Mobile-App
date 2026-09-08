@@ -39,6 +39,8 @@ import 'package:numberwale/src/numerology/presentation/pages/numerology_landing_
 import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
 import 'package:numberwale/src/home/presentation/pages/categories_page.dart';
 import 'package:numberwale/src/services/presentation/pages/smart_ivr_page.dart';
+import 'package:numberwale/src/services/presentation/pages/sms_solutions_page.dart';
+import 'package:numberwale/src/services/presentation/pages/whatsapp_page.dart';
 
 class Routes {
   // Splash & Onboarding
@@ -93,6 +95,8 @@ class Routes {
 
   // Business Services (drawer "Products" section)
   static const String smartIvr = '/products/smart-ivr';
+  static const String smsSolutions = '/products/sms-solutions';
+  static const String whatsapp = '/products/whatsapp';
 
   // CMS Pages
   static const String faq = '/faq';
@@ -173,6 +177,8 @@ class Routes {
 
         // Business Services
         smartIvr: (context) => const SmartIvrPage(),
+        smsSolutions: (context) => const SmsSolutionsPage(),
+        whatsapp: (context) => const WhatsappPage(),
 
         // CMS Pages
         faq: (context) => const FaqPage(),

@@ -471,8 +471,13 @@ class _AppDrawer extends StatelessWidget {
             _ProductsSection(
               onItemTap: (item) {
                 Navigator.pop(context);
-                if (item == 'Smart IVR') {
-                  Navigator.pushNamed(context, Routes.smartIvr);
+                switch (item) {
+                  case 'Smart IVR':
+                    Navigator.pushNamed(context, Routes.smartIvr);
+                  case 'SMS Solutions':
+                    Navigator.pushNamed(context, Routes.smsSolutions);
+                  case 'Whatsapp API':
+                    Navigator.pushNamed(context, Routes.whatsapp);
                 }
               },
             ),
@@ -676,9 +681,8 @@ class _NewBadge extends StatelessWidget {
 }
 
 /// The "Products" expandable section (Smart IVR, SMS Solutions, WhatsApp
-/// API). Only Smart IVR has a destination page so far; [onItemTap] is
-/// called with the tapped item's label either way so the caller can route
-/// (or just close the drawer for the not-yet-built ones).
+/// API). [onItemTap] is called with the tapped item's label so the caller
+/// can route to its page.
 class _ProductsSection extends StatefulWidget {
   const _ProductsSection({required this.onItemTap});
 
