@@ -9,6 +9,7 @@ import 'package:numberwale/core/widgets/image_banner_carousel.dart';
 import 'package:numberwale/core/widgets/number_search_bar.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
+import 'package:numberwale/src/corporate_pack/presentation/widgets/corporate_elite_pack_section.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
 
 class HomePage extends StatefulWidget {
@@ -163,6 +164,7 @@ class _HomePageState extends State<HomePage> {
 
     final List<CategoryItem> categories;
     final List<FeaturedNumber> discountedNumbers;
+    final List<FeaturedNumber> newlyAddedNumbers;
 
     if (state is HomeDataLoaded) {
       categories = state.categories.isEmpty
@@ -196,9 +198,30 @@ class _HomePageState extends State<HomePage> {
               )),
         );
       }).toList();
+
+      newlyAddedNumbers = state.newlyAddedNumbers.map((pn) {
+        return FeaturedNumber(
+          phoneNumber: pn.number,
+          price: pn.price,
+          category: pn.category,
+          features: pn.features,
+          discount: pn.discount > 0 ? pn.discount.toDouble() : null,
+          isFeatured: pn.isFeatured,
+          numerology: pn.numerology,
+          onTap: () => Navigator.pushNamed(
+            context,
+            Routes.productDetail,
+            arguments: pn.number,
+          ),
+          onAddToCart: () => context.read<CartBloc>().add(AddToCartEvent(
+                productId: pn.id ?? pn.number,
+              )),
+        );
+      }).toList();
     } else {
       categories = _getMockCategories(context).take(4).toList();
       discountedNumbers = [];
+      newlyAddedNumbers = [];
     }
 
     return Scaffold(
@@ -295,6 +318,23 @@ class _HomePageState extends State<HomePage> {
                       Navigator.pushNamed(context, Routes.categories);
                     },
                   ),
+                  const SizedBox(height: 32),
+
+                  // Newly Added VIP Numbers
+                  if (newlyAddedNumbers.isNotEmpty)
+                    FeaturedNumbersSection(
+                      title: 'Newly Added VIP Numbers',
+                      subtitle: 'Fresh numbers added this week',
+                      numbers: newlyAddedNumbers,
+                      onSeeAllTap: () {
+                        Navigator.pushNamed(
+                            context, Routes.newlyAddedVipNumbers);
+                      },
+                    ),
+                  if (newlyAddedNumbers.isNotEmpty) const SizedBox(height: 32),
+
+                  // Corporate Elite Pack (Jodi)
+                  const CorporateElitePackSection(),
                   const SizedBox(height: 32),
 
                   // Discounted Numbers

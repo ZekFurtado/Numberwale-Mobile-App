@@ -112,6 +112,31 @@ class AdvancedSearchFilters extends Equatable {
     return params;
   }
 
+  /// Returns a copy with the given pattern field(s) cleared to null. Used to
+  /// remove a single active-filter chip (e.g. "Starts With") without
+  /// disturbing the rest of the advanced search — `copyWith` can't do this
+  /// itself since its `??` merge semantics can only replace a field, never
+  /// null one out.
+  AdvancedSearchFilters clearing({
+    bool startsWith = false,
+    bool endsWith = false,
+    bool anywhere = false,
+  }) {
+    return AdvancedSearchFilters(
+      startsWith: startsWith ? null : this.startsWith,
+      endsWith: endsWith ? null : this.endsWith,
+      anywhere: anywhere ? null : this.anywhere,
+      mustContain: mustContain,
+      notContain: notContain,
+      literSum: literSum,
+      trapSum: trapSum,
+      scoreSum: scoreSum,
+      exactDigitPlacement: exactDigitPlacement,
+      mostContainDigit: mostContainDigit,
+      mostContainCount: mostContainCount,
+    );
+  }
+
   static List<String> _splitDigits(String? raw) {
     if (raw == null || raw.isEmpty) return const [];
     return raw

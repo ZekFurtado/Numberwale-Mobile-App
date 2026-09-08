@@ -16,6 +16,16 @@ class ProductFilters extends Equatable {
   final int page;
   final int limit;
 
+  /// Only include products added within the last [recentDays] days.
+  final int? recentDays;
+
+  /// Raw sort expression passed straight through to the API (e.g. `-createdAt`).
+  final String? sort;
+
+  /// Skips the total-count DB query for faster responses. When set, the API
+  /// returns `totalCount`/`totalPages` as null (see [ProductResultModel]).
+  final bool? skipCount;
+
   const ProductFilters({
     this.search,
     this.category,
@@ -29,6 +39,9 @@ class ProductFilters extends Equatable {
     this.advanced,
     this.page = 1,
     this.limit = 20,
+    this.recentDays,
+    this.sort,
+    this.skipCount,
   });
 
   ProductFilters copyWith({
@@ -44,6 +57,9 @@ class ProductFilters extends Equatable {
     AdvancedSearchFilters? advanced,
     int? page,
     int? limit,
+    int? recentDays,
+    String? sort,
+    bool? skipCount,
   }) {
     return ProductFilters(
       search: search ?? this.search,
@@ -58,6 +74,9 @@ class ProductFilters extends Equatable {
       advanced: advanced ?? this.advanced,
       page: page ?? this.page,
       limit: limit ?? this.limit,
+      recentDays: recentDays ?? this.recentDays,
+      sort: sort ?? this.sort,
+      skipCount: skipCount ?? this.skipCount,
     );
   }
 
@@ -92,6 +111,9 @@ class ProductFilters extends Equatable {
     if (readyToPort != null) params['readyToPort'] = readyToPort!;
     if (random == true) params['random'] = 'true';
     if (seed != null) params['seed'] = seed!;
+    if (recentDays != null) params['recentDays'] = recentDays!.toString();
+    if (sort != null) params['sort'] = sort!;
+    if (skipCount == true) params['skipCount'] = 'true';
     return params;
   }
 
@@ -109,5 +131,8 @@ class ProductFilters extends Equatable {
     advanced,
     page,
     limit,
+    recentDays,
+    sort,
+    skipCount,
   ];
 }

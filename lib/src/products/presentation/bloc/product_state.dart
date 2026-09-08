@@ -36,6 +36,12 @@ class ProductsLoaded extends ProductState {
   final int totalPages;
   final bool hasNextPage;
 
+  /// Populated only when [products] came back empty for an advanced search
+  /// using "Starts With"/"Ends With" — each group relaxes one of those
+  /// filters (via the Similar Number Fetch API) to surface close
+  /// alternatives instead of a flat "no results" screen.
+  final List<ClosestMatchGroup>? closestMatches;
+
   const ProductsLoaded({
     required this.products,
     required this.appliedFilters,
@@ -43,6 +49,7 @@ class ProductsLoaded extends ProductState {
     required this.currentPage,
     required this.totalPages,
     required this.hasNextPage,
+    this.closestMatches,
   });
 
   @override
@@ -53,7 +60,20 @@ class ProductsLoaded extends ProductState {
         currentPage,
         totalPages,
         hasNextPage,
+        closestMatches,
       ];
+}
+
+/// One "relax a single pattern filter" suggestion group shown when an
+/// advanced Starts With/Ends With search returns zero exact matches.
+class ClosestMatchGroup extends Equatable {
+  final String label;
+  final List<PhoneNumber> products;
+
+  const ClosestMatchGroup({required this.label, required this.products});
+
+  @override
+  List<Object?> get props => [label, products];
 }
 
 class ProductDetailLoaded extends ProductState {

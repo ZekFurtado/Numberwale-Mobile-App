@@ -6,6 +6,7 @@ import 'package:numberwale/core/widgets/numberwale_app_bar.dart';
 import 'package:numberwale/src/account/presentation/pages/account_page.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/app/presentation/pages/placeholders/offer_zone_placeholder.dart';
+import 'package:numberwale/src/ai_search/presentation/bloc/ai_search_bloc.dart';
 import 'package:numberwale/src/explore/presentation/pages/explore_numbers_page.dart';
 import 'package:numberwale/src/home/presentation/pages/home_page.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
@@ -15,11 +16,15 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only ProductBloc lives here — it's only needed by the Explore tab.
-    // CartBloc, ProfileBloc, AddressBloc, AppNavigationCubit are app-level
-    // (provided in main.dart) so all pushed routes can also access them.
-    return BlocProvider(
-      create: (_) => di.sl<ProductBloc>(),
+    // ProductBloc and AiSearchBloc live here — they're only needed by the
+    // Explore tab. CartBloc, ProfileBloc, AddressBloc, AppNavigationCubit are
+    // app-level (provided in main.dart) so all pushed routes can also access
+    // them.
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => di.sl<ProductBloc>()),
+        BlocProvider(create: (_) => di.sl<AiSearchBloc>()),
+      ],
       child: const _AppShellView(),
     );
   }

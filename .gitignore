@@ -50,3 +50,4 @@ app.*.map.json
 /lib/core/utils/backend_config.dart
 /lib/core/utils/phonepe_config.dart
 /lib/core/utils/razorpay_config.dart
+/android/key.properties.example

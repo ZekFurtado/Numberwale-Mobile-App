@@ -28,14 +28,17 @@ class HomeDataLoaded extends HomeState {
     required this.banners,
     required this.categories,
     required this.discountedNumbers,
+    required this.newlyAddedNumbers,
   });
 
   final List<Banner> banners;
   final List<Category> categories;
   final List<PhoneNumber> discountedNumbers;
+  final List<PhoneNumber> newlyAddedNumbers;
 
   @override
-  List<Object> get props => [banners, categories, discountedNumbers];
+  List<Object> get props =>
+      [banners, categories, discountedNumbers, newlyAddedNumbers];
 }
 
 /// Error occurred while loading home data

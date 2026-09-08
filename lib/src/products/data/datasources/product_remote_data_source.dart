@@ -9,6 +9,7 @@ import 'package:numberwale/core/utils/typedef.dart';
 import 'package:numberwale/src/products/data/models/product_model.dart';
 import 'package:numberwale/src/products/data/models/product_result_model.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
+import 'package:numberwale/src/products/domain/entities/similar_number_filters.dart';
 
 abstract class ProductRemoteDataSource {
   Future<ProductResultModel> getProducts(ProductFilters filters);
@@ -16,6 +17,8 @@ abstract class ProductRemoteDataSource {
   Future<ProductResultModel> getDiscountedProducts(ProductFilters filters);
 
   Future<ProductModel> getProductByNumber(String number);
+
+  Future<ProductResultModel> getSimilarProducts(SimilarNumberFilters filters);
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -79,6 +82,42 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
           message:
               errorData['message'] as String? ??
               'Failed to fetch discounted products',
+          statusCode: response.statusCode.toString(),
+        );
+      }
+    } on SocketException {
+      throw const NetworkException(
+        message: 'No internet connection',
+        statusCode: '503',
+      );
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: e.toString(), statusCode: '500');
+    }
+  }
+
+  @override
+  Future<ProductResultModel> getSimilarProducts(
+    SimilarNumberFilters filters,
+  ) async {
+    try {
+      final uri = Uri.parse(
+        BackendConfig.similarProductsUrl,
+      ).replace(queryParameters: filters.toQueryParams());
+
+      log('[ProductDS] GET $uri');
+      final response = await _client.get(uri, headers: BackendConfig.headers);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as DataMap;
+        return ProductResultModel.fromMap(data);
+      } else {
+        final errorData = jsonDecode(response.body) as DataMap;
+        throw ServerException(
+          message:
+              errorData['message'] as String? ??
+              'Failed to fetch similar products',
           statusCode: response.statusCode.toString(),
         );
       }

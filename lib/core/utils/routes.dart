@@ -16,6 +16,7 @@ import 'package:numberwale/src/authentication/presentation/pages/forgot_password
 import 'package:numberwale/src/authentication/presentation/pages/reset_password_page.dart';
 import 'package:numberwale/src/products/presentation/pages/product_detail_page.dart';
 import 'package:numberwale/src/products/presentation/pages/advanced_search_page.dart';
+import 'package:numberwale/src/products/presentation/pages/newly_added_vip_numbers_page.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/cart/presentation/pages/cart_page.dart';
 import 'package:numberwale/src/checkout/presentation/pages/address_selection_page.dart';
@@ -59,6 +60,7 @@ class Routes {
   static const String exploreNumbers = '/explore';
   static const String advancedSearch = '/search/advanced';
   static const String productDetail = '/product';
+  static const String newlyAddedVipNumbers = '/newly-added-vip-numbers';
 
   // Cart & Checkout
   static const String cart = '/cart';
@@ -117,6 +119,12 @@ class Routes {
 
         // Categories
         categories: (context) => const CategoriesPage(),
+
+        // Newly Added VIP Numbers ("See All" from home screen)
+        newlyAddedVipNumbers: (context) => BlocProvider(
+          create: (_) => di.sl<ProductBloc>(),
+          child: const NewlyAddedVipNumbersPage(),
+        ),
 
         // Cart
         cart: (context) => const CartPage(),

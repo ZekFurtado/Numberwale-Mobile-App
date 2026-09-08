@@ -44,7 +44,18 @@ import '../../src/products/domain/repositories/product_repository.dart';
 import '../../src/products/domain/usecases/get_discounted_products.dart';
 import '../../src/products/domain/usecases/get_product_by_number.dart';
 import '../../src/products/domain/usecases/get_products.dart';
+import '../../src/products/domain/usecases/get_similar_products.dart';
 import '../../src/products/presentation/bloc/product_bloc.dart';
+import '../../src/corporate_pack/data/datasources/corporate_pack_remote_data_source.dart';
+import '../../src/corporate_pack/data/repositories/corporate_pack_repository_impl.dart';
+import '../../src/corporate_pack/domain/repositories/corporate_pack_repository.dart';
+import '../../src/corporate_pack/domain/usecases/get_corporate_packs.dart';
+import '../../src/corporate_pack/presentation/bloc/corporate_pack_bloc.dart';
+import '../../src/ai_search/data/datasources/ai_search_remote_data_source.dart';
+import '../../src/ai_search/data/repositories/ai_search_repository_impl.dart';
+import '../../src/ai_search/domain/repositories/ai_search_repository.dart';
+import '../../src/ai_search/domain/usecases/get_ai_search_filters.dart';
+import '../../src/ai_search/presentation/bloc/ai_search_bloc.dart';
 import '../../src/cart/data/datasources/cart_remote_data_source.dart';
 import '../../src/cart/data/repositories/cart_repository_impl.dart';
 import '../../src/cart/domain/repositories/cart_repository.dart';
@@ -127,6 +138,7 @@ Future<void> init() async {
         getBanners: sl(),
         getCategories: sl(),
         getDiscountedNumbers: sl(),
+        getNewlyAddedProducts: sl(),
     ))
 
     /// Products
@@ -134,7 +146,14 @@ Future<void> init() async {
         getProducts: sl(),
         getDiscountedProducts: sl(),
         getProductByNumber: sl(),
+        getSimilarProducts: sl(),
     ))
+
+    /// Corporate Elite Pack (Jodi)
+    ..registerFactory(() => CorporatePackBloc(getCorporatePacks: sl()))
+
+    /// AI Search
+    ..registerFactory(() => AiSearchBloc(getAiSearchFilters: sl()))
 
     /// Cart
     ..registerFactory(() => CartBloc(
@@ -205,6 +224,13 @@ Future<void> init() async {
     ..registerLazySingleton(() => GetProducts(sl()))
     ..registerLazySingleton(() => GetDiscountedProducts(sl()))
     ..registerLazySingleton(() => GetProductByNumber(sl()))
+    ..registerLazySingleton(() => GetSimilarProducts(sl()))
+
+    /// Corporate Elite Pack (Jodi)
+    ..registerLazySingleton(() => GetCorporatePacks(sl()))
+
+    /// AI Search
+    ..registerLazySingleton(() => GetAiSearchFilters(sl()))
 
     /// Cart
     ..registerLazySingleton(() => GetCart(sl()))
@@ -254,6 +280,14 @@ Future<void> init() async {
     ..registerLazySingleton<ProductRepository>(
         () => ProductRepositoryImpl(sl()))
 
+    /// Corporate Elite Pack (Jodi)
+    ..registerLazySingleton<CorporatePackRepository>(
+        () => CorporatePackRepositoryImpl(sl()))
+
+    /// AI Search
+    ..registerLazySingleton<AiSearchRepository>(
+        () => AiSearchRepositoryImpl(sl()))
+
     /// Cart
     ..registerLazySingleton<CartRepository>(() => CartRepositoryImpl(sl()))
 
@@ -301,6 +335,14 @@ Future<void> init() async {
     /// Products
     ..registerLazySingleton<ProductRemoteDataSource>(
         () => ProductRemoteDataSourceImpl(sl<AuthenticatedClient>()))
+
+    /// Corporate Elite Pack (Jodi)
+    ..registerLazySingleton<CorporatePackRemoteDataSource>(
+        () => CorporatePackRemoteDataSourceImpl(sl<AuthenticatedClient>()))
+
+    /// AI Search (public endpoint, no auth needed)
+    ..registerLazySingleton<AiSearchRemoteDataSource>(
+        () => AiSearchRemoteDataSourceImpl(sl<http.Client>()))
 
     /// Cart
     ..registerLazySingleton<CartRemoteDataSource>(

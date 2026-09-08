@@ -21,7 +21,12 @@ class ProductResultModel extends ProductResult {
     final productsRaw = map['products'] as List<dynamic>? ?? [];
 
     final currentPage = (metadata['currentPage'] as num?)?.toInt() ?? 1;
-    final totalPages = (metadata['totalPages'] as num?)?.toInt() ?? 0;
+    // When the request sets `skipCount`, the API returns `totalPages: null`
+    // (DB count query skipped for speed) rather than omitting the field, so
+    // this must be distinguished from "0 pages" - fall back to a
+    // full-page-means-more-pages heuristic for pagination in that case.
+    final totalPagesRaw = metadata['totalPages'] as num?;
+    final itemsPerPage = (metadata['itemsPerPage'] as num?)?.toInt() ?? 20;
 
     return ProductResultModel(
       products: productsRaw
@@ -29,9 +34,11 @@ class ProductResultModel extends ProductResult {
           .toList(),
       totalCount: (metadata['totalCount'] as num?)?.toInt() ?? 0,
       currentPage: currentPage,
-      totalPages: totalPages,
-      itemsPerPage: (metadata['itemsPerPage'] as num?)?.toInt() ?? 20,
-      hasNextPage: currentPage < totalPages,
+      totalPages: totalPagesRaw?.toInt() ?? 0,
+      itemsPerPage: itemsPerPage,
+      hasNextPage: totalPagesRaw != null
+          ? currentPage < totalPagesRaw.toInt()
+          : productsRaw.length >= itemsPerPage,
       hasPrevPage: currentPage > 1,
       seed: metadata['seed'] as String?,
     );
