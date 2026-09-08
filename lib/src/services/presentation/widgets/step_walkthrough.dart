@@ -49,6 +49,40 @@ class StepWalkthrough extends StatelessWidget {
   }
 }
 
+/// Sliver form of [StepWalkthrough] for use inside a [CustomScrollView].
+/// Each step is only built while it's near the viewport, and disposed once
+/// scrolled well away — unlike [StepWalkthrough]'s plain [Column], which
+/// builds (and keeps alive) every step's media up front. That laziness
+/// matters when a step's media is something costly like an autoplaying
+/// video: mounting many at once can exhaust a device's hardware decoder
+/// pool, and — if two steps happen to share one [StepItem.media] instance —
+/// having both alive at the same time is what a shared video texture
+/// doesn't reliably support rendering into more than one place at once.
+class StepWalkthroughSliver extends StatelessWidget {
+  const StepWalkthroughSliver({required this.steps, super.key});
+
+  final List<StepItem> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final isLast = index == steps.length - 1;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _StepBlock(step: steps[index]),
+              if (!isLast) const _StepConnector(),
+            ],
+          );
+        },
+        childCount: steps.length,
+      ),
+    );
+  }
+}
+
 class _StepBlock extends StatelessWidget {
   const _StepBlock({required this.step});
 

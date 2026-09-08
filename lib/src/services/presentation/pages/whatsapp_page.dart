@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:numberwale/src/services/presentation/widgets/step_walkthrough.dart';
@@ -6,8 +8,46 @@ import 'package:video_player/video_player.dart';
 const _orange = kServiceOrange;
 const _bodyGray = kServiceBodyGray;
 
+/// Caps how many [_StepVideo]s decode at once. This device's hardware video
+/// decoder pool turned out to have a low ceiling — beyond it, a new
+/// controller's initialize() call never produces a frame (no error either,
+/// it just silently never becomes ready). The walkthrough is already lazy
+/// (see [StepWalkthroughSliver]), but that alone wasn't a tight enough
+/// bound, so each [_StepVideo] now waits for a slot here before it starts
+/// decoding, and frees it on dispose.
+class _VideoSlotLimiter {
+  _VideoSlotLimiter(this.maxConcurrent);
+
+  final int maxConcurrent;
+  int _active = 0;
+  final List<Completer<void>> _waiters = [];
+
+  Future<void> acquire() {
+    if (_active < maxConcurrent) {
+      _active++;
+      return Future.value();
+    }
+    final completer = Completer<void>();
+    _waiters.add(completer);
+    return completer.future;
+  }
+
+  void release() {
+    if (_waiters.isNotEmpty) {
+      _waiters.removeAt(0).complete();
+    } else if (_active > 0) {
+      _active--;
+    }
+  }
+}
+
+final _videoSlots = _VideoSlotLimiter(2);
+
 const _mainDemoVideo =
     'https://www.numberwale.com/assets/Whatsapp-API-Providers-DdsQmXP2.mp4';
+const _privateNotesVideo =
+    'https://www.numberwale.com/assets/privatenotes-30WRe7Lv.mp4';
+const _promoVideo = 'https://www.numberwale.com/assets/wha-CXayNC7b.mp4';
 
 const _introText =
     'Our WhatsApp Solution platform provides businesses with powerful tools '
@@ -16,11 +56,25 @@ const _introText =
     'you can create seamless customer experiences that drive engagement and '
     'results.';
 
-final _steps = [
-  const StepItem(
+class _StepData {
+  const _StepData({
+    required this.number,
+    required this.title,
+    required this.videoUrl,
+    required this.text,
+  });
+
+  final int number;
+  final String title;
+  final String videoUrl;
+  final String text;
+}
+
+const _stepsData = [
+  _StepData(
     number: 1,
     title: 'Chatbot',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         "Within minutes, install the no-code WhatsApp Chatbot - and say hi "
         "to your company's Digital Assistant. Build better customer "
@@ -28,10 +82,10 @@ final _steps = [
         'your mundane replies to customer queries where predefined options '
         'and answers guide your customers in their service journey.',
   ),
-  const StepItem(
+  _StepData(
     number: 2,
     title: 'Multiple Agents',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         'In order to manage customer service or sales operations, one of '
         'the problems that companies encounter using WhatsApp is not being '
@@ -40,21 +94,20 @@ final _steps = [
         'our Numberwale Whatsapp Business API that allows sales or support '
         'teams to work collaboratively from a single platform.',
   ),
-  const StepItem(
+  _StepData(
     number: 3,
     title: 'Private Notes',
-    media: _StepVideo(
-        url: 'https://www.numberwale.com/assets/privatenotes-30WRe7Lv.mp4'),
+    videoUrl: _privateNotesVideo,
     text:
         'Add private notes against contacts. Add private notes in a '
         'conversation. Restrict or open information to users within the '
         'organization. Make customer interactions more personal and track '
         'important information across your team.',
   ),
-  const StepItem(
+  _StepData(
     number: 4,
     title: 'Collaboration',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         'The great feature by WhatsApp API offers world-class collaboration '
         'for your team-members so they are never stuck when they need '
@@ -62,10 +115,10 @@ final _steps = [
         'provide on-the-go resolution to customers and deliver exceptional '
         'service every time.',
   ),
-  const StepItem(
+  _StepData(
     number: 5,
     title: 'Quick Replies',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         'The Numberwale WhatsApp API provides you a quick respond feature '
         'to your customers with a single click. Pre-defined rich text '
@@ -73,10 +126,10 @@ final _steps = [
         'and quick reply buttons within WhatsApp to get immediate '
         'responses from your audience.',
   ),
-  const StepItem(
+  _StepData(
     number: 6,
     title: 'Actionable Dashboards',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         'The Numberwale WhatsApp API provides you the 360 degree view of '
         'digital conversations. Monitor and take action based on '
@@ -84,10 +137,10 @@ final _steps = [
         'every process that is executing and optimize your customer '
         'communication strategies.',
   ),
-  const StepItem(
+  _StepData(
     number: 7,
     title: 'Customer Profiling',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         'Customer profiling is one of the best features to locate your '
         'customer. This feature is provided by Numberwale WhatsAPI. '
@@ -95,10 +148,10 @@ final _steps = [
         'actions and re-targeting, allowing for personalized '
         'communications and better conversion rates.',
   ),
-  const StepItem(
+  _StepData(
     number: 8,
     title: 'Rich Text',
-    media: _StepVideo(url: _mainDemoVideo),
+    videoUrl: _mainDemoVideo,
     text:
         'Get interact with your customer easily by sharing images, '
         'electronic tickets, video tutorials, audio files, QR codes, the '
@@ -185,11 +238,31 @@ const _benefits = [
 /// demo video, the numbered "how it works" walkthrough (with per-step demo
 /// videos), the "Power your Business WhatsApp channel" chain graphic, and
 /// the business-benefits grid — laid out for a single mobile column.
+///
+/// Several walkthrough steps reuse the same source clip. Building all of
+/// them (plus the featured promo video) up front, each with its own
+/// decoder, is enough concurrent hardware video decoders to exceed what the
+/// device supports — later ones silently never produce a frame. Rendering
+/// the walkthrough as a lazy sliver (each step's video only mounts, and
+/// decodes, while it's near the viewport) keeps at most a couple of videos
+/// alive at once, which also sidesteps a separate issue: the same decoded
+/// video texture doesn't reliably render into more than one simultaneously
+/// mounted widget.
 class WhatsappPage extends StatelessWidget {
   const WhatsappPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final steps = [
+      for (final step in _stepsData)
+        StepItem(
+          number: step.number,
+          title: step.title,
+          text: step.text,
+          media: _StepVideo(url: step.videoUrl),
+        ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('WhatsApp API'),
@@ -203,53 +276,70 @@ class WhatsappPage extends StatelessWidget {
             colors: [Colors.white, Color(0xFFF9FAFB)],
           ),
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: _HeroCard(),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: _HeroCard(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(20)),
+                      child: const _StepVideo(
+                          url: _promoVideo, useSlotLimiter: false),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'HOW OUR WHATSAPP SOLUTION WORKS',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _orange,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          _introText,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: _bodyGray, fontSize: 14, height: 1.5),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(20)),
-                  child: _StepVideo(url: 'https://www.numberwale.com/assets/wha-CXayNC7b.mp4'),
-                ),
-              ),
-              Padding(
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: StepWalkthroughSliver(steps: steps),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'HOW OUR WHATSAPP SOLUTION WORKS',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: _orange,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      _introText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: _bodyGray, fontSize: 14, height: 1.5),
-                    ),
-                    const SizedBox(height: 32),
-                    StepWalkthrough(steps: _steps),
-                    const SizedBox(height: 32),
-                    const _PowerCta(),
-                  ],
-                ),
+                child: const _PowerCta(),
               ),
-              const SizedBox(height: 32),
-              const _BenefitsSection(),
-            ],
-          ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 32),
+            ),
+            const SliverToBoxAdapter(
+              child: _BenefitsSection(),
+            ),
+          ],
         ),
       ),
     );
@@ -287,12 +377,22 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
-/// Autoplaying, looping, muted video used both for the featured promo clip
-/// and for each walkthrough step's demo recording.
+/// Autoplaying, looping, muted video with its own dedicated controller —
+/// created in [initState] and disposed in [dispose], so it only decodes
+/// while this widget is actually mounted (see the lazy sliver walkthrough
+/// this is used in). Initialization waits on [_videoSlots] so it never
+/// exceeds the device's decoder capacity.
 class _StepVideo extends StatefulWidget {
-  const _StepVideo({required this.url});
+  const _StepVideo({required this.url, this.useSlotLimiter = true});
 
   final String url;
+
+  /// Whether this instance waits its turn in [_videoSlots]. The featured
+  /// promo video stays mounted (and decoding) for the page's entire
+  /// lifetime — unlike a lazily-mounted step, it never disposes to free its
+  /// slot back up, so it gets a decoder unconditionally instead of
+  /// permanently occupying one of the few slots meant for the walkthrough.
+  final bool useSlotLimiter;
 
   @override
   State<_StepVideo> createState() => _StepVideoState();
@@ -300,8 +400,7 @@ class _StepVideo extends StatefulWidget {
 
 class _StepVideoState extends State<_StepVideo> {
   late final VideoPlayerController _controller;
-  bool _ready = false;
-  bool _failed = false;
+  bool _holdsSlot = false;
 
   @override
   void initState() {
@@ -309,48 +408,67 @@ class _StepVideoState extends State<_StepVideo> {
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
     _controller
       ..setLooping(true)
-      ..setVolume(0)
-      ..initialize().then((_) {
-        if (!mounted) return;
-        setState(() => _ready = true);
-        _controller.play();
-      }).catchError((Object _) {
-        if (!mounted) return;
-        setState(() => _failed = true);
+      ..setVolume(0);
+    if (widget.useSlotLimiter) {
+      _videoSlots.acquire().then((_) {
+        if (!mounted) {
+          _videoSlots.release();
+          return;
+        }
+        _holdsSlot = true;
+        _startPlayback();
       });
+    } else {
+      _startPlayback();
+    }
+  }
+
+  void _startPlayback() {
+    _controller.initialize().then((_) {
+      if (!mounted) return;
+      _controller.play();
+    });
   }
 
   @override
   void dispose() {
+    if (_holdsSlot) {
+      _videoSlots.release();
+    }
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_failed) {
-      return const AspectRatio(
-        aspectRatio: 16 / 9,
-        child: ColoredBox(
-          color: Color(0xFFF3F4F6),
-          child: Center(
-            child: Icon(Icons.videocam_off_outlined, size: 40),
-          ),
-        ),
-      );
-    }
-    if (!_ready) {
-      return const AspectRatio(
-        aspectRatio: 16 / 9,
-        child: ColoredBox(
-          color: Color(0xFFF3F4F6),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-    return AspectRatio(
-      aspectRatio: _controller.value.aspectRatio,
-      child: VideoPlayer(_controller),
+    return ValueListenableBuilder<VideoPlayerValue>(
+      valueListenable: _controller,
+      builder: (context, value, child) {
+        if (value.hasError) {
+          return const AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(
+              color: Color(0xFFF3F4F6),
+              child: Center(
+                child: Icon(Icons.videocam_off_outlined, size: 40),
+              ),
+            ),
+          );
+        }
+        if (!value.isInitialized) {
+          return const AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(
+              color: Color(0xFFF3F4F6),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+        return AspectRatio(
+          aspectRatio: value.aspectRatio,
+          child: VideoPlayer(_controller),
+        );
+      },
     );
   }
 }
