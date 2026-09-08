@@ -7,6 +7,7 @@ import 'package:numberwale/src/home/domain/entities/category.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/home/domain/usecases/get_banners.dart';
 import 'package:numberwale/src/home/domain/usecases/get_categories.dart';
+import 'package:numberwale/src/home/domain/usecases/get_deal_of_the_day.dart';
 import 'package:numberwale/src/home/domain/usecases/get_discounted_numbers.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/products/domain/entities/product_result.dart';
@@ -21,10 +22,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required GetCategories getCategories,
     required GetDiscountedNumbers getDiscountedNumbers,
     required GetProducts getNewlyAddedProducts,
+    required GetDealOfTheDay getDealOfTheDay,
   })  : _getBanners = getBanners,
         _getCategories = getCategories,
         _getDiscountedNumbers = getDiscountedNumbers,
         _getNewlyAddedProducts = getNewlyAddedProducts,
+        _getDealOfTheDay = getDealOfTheDay,
         super(const HomeInitial()) {
     on<LoadHomeDataEvent>(_loadHomeDataHandler);
     on<RefreshHomeDataEvent>(_refreshHomeDataHandler);
@@ -34,6 +37,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetCategories _getCategories;
   final GetDiscountedNumbers _getDiscountedNumbers;
   final GetProducts _getNewlyAddedProducts;
+  final GetDealOfTheDay _getDealOfTheDay;
 
   /// Matches the "Newly Added VIP Numbers" API spec exactly: last 7 days,
   /// newest first, DB count query skipped for speed.
@@ -57,12 +61,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       _getCategories(),
       _getDiscountedNumbers(const GetDiscountedNumbersParams(limit: 10)),
       _getNewlyAddedProducts(_newlyAddedParams),
+      _getDealOfTheDay(),
     ]);
 
     final bannersResult = results[0];
     final categoriesResult = results[1];
     final discountedResult = results[2];
     final newlyAddedResult = results[3];
+    final dealOfTheDayResult = results[4];
 
     if (categoriesResult.isLeft()) {
       final failure = categoriesResult.fold((l) => l, (r) => null);
@@ -79,6 +85,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>),
       newlyAddedNumbers: newlyAddedResult.fold(
           (l) => <PhoneNumber>[], (r) => (r as ProductResult).products),
+      dealOfTheDayNumbers: dealOfTheDayResult.fold(
+          (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>),
     ));
   }
 
@@ -93,12 +101,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       _getCategories(),
       _getDiscountedNumbers(const GetDiscountedNumbersParams(limit: 10)),
       _getNewlyAddedProducts(_newlyAddedParams),
+      _getDealOfTheDay(),
     ]);
 
     final bannersResult = results[0];
     final categoriesResult = results[1];
     final discountedResult = results[2];
     final newlyAddedResult = results[3];
+    final dealOfTheDayResult = results[4];
 
     final banners =
         bannersResult.fold((l) => <Banner>[], (r) => r as List<Banner>);
@@ -108,12 +118,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>);
     final newlyAddedNumbers = newlyAddedResult.fold(
         (l) => <PhoneNumber>[], (r) => (r as ProductResult).products);
+    final dealOfTheDayNumbers = dealOfTheDayResult.fold(
+        (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>);
 
     emit(HomeDataLoaded(
       banners: banners,
       categories: categories,
       discountedNumbers: discountedNumbers,
       newlyAddedNumbers: newlyAddedNumbers,
+      dealOfTheDayNumbers: dealOfTheDayNumbers,
     ));
   }
 }

@@ -36,6 +36,7 @@ import '../../src/home/data/repositories/home_repository_impl.dart';
 import '../../src/home/domain/repositories/home_repository.dart';
 import '../../src/home/domain/usecases/get_banners.dart';
 import '../../src/home/domain/usecases/get_categories.dart';
+import '../../src/home/domain/usecases/get_deal_of_the_day.dart';
 import '../../src/home/domain/usecases/get_discounted_numbers.dart';
 import '../../src/home/presentation/bloc/home_bloc.dart';
 import '../../src/products/data/datasources/product_remote_data_source.dart';
@@ -139,6 +140,7 @@ Future<void> init() async {
         getCategories: sl(),
         getDiscountedNumbers: sl(),
         getNewlyAddedProducts: sl(),
+        getDealOfTheDay: sl(),
     ))
 
     /// Products
@@ -219,6 +221,7 @@ Future<void> init() async {
     ..registerLazySingleton(() => GetBanners(sl()))
     ..registerLazySingleton(() => GetCategories(sl()))
     ..registerLazySingleton(() => GetDiscountedNumbers(sl()))
+    ..registerLazySingleton(() => GetDealOfTheDay(sl()))
 
     /// Products
     ..registerLazySingleton(() => GetProducts(sl()))

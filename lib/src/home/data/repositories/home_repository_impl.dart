@@ -127,4 +127,38 @@ class HomeRepositoryImpl implements HomeRepository {
       ));
     }
   }
+
+  @override
+  ResultFuture<List<PhoneNumber>> getDealOfTheDay() async {
+    try {
+      final numbers = await remoteDataSource.getDealOfTheDay();
+      await localDataSource.cacheDealOfTheDay(numbers);
+      return Right(numbers);
+    } on ServerException catch (e) {
+      try {
+        final cached = await localDataSource.getCachedDealOfTheDay();
+        return Right(cached);
+      } on CacheException {
+        return Left(ServerFailure(
+          message: e.message,
+          statusCode: e.statusCode,
+        ));
+      }
+    } on NetworkException {
+      try {
+        final cached = await localDataSource.getCachedDealOfTheDay();
+        return Right(cached);
+      } on CacheException {
+        return const Left(NetworkFailure(
+          message: 'No internet connection and no cached data',
+          statusCode: '503',
+        ));
+      }
+    } catch (e) {
+      return Left(ServerFailure(
+        message: e.toString(),
+        statusCode: '500',
+      ));
+    }
+  }
 }

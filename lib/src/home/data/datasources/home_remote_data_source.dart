@@ -19,6 +19,9 @@ abstract class HomeRemoteDataSource {
 
   /// Fetches discounted phone numbers from the API
   Future<List<PhoneNumberModel>> getDiscountedNumbers({int limit = 10});
+
+  /// Fetches the actively running "Deal of the Day" numbers from the API
+  Future<List<PhoneNumberModel>> getDealOfTheDay();
 }
 
 /// Implementation of HomeRemoteDataSource that makes actual API calls
@@ -87,6 +90,78 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
       url: BackendConfig.getDiscountedProductsUrl,
       queryParams: {'page': '1', 'limit': limit.toString()},
       label: 'discounted',
+    );
+  }
+
+  @override
+  Future<List<PhoneNumberModel>> getDealOfTheDay() async {
+    try {
+      final uri = Uri.parse(BackendConfig.dealOfTheDayUrl);
+      log('[HomeDS] GET deal-of-the-day: $uri');
+      final response = await _client.get(uri, headers: BackendConfig.headers);
+      log('[HomeDS] deal-of-the-day status=${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final dealsRaw = data['data'] as List<dynamic>? ?? [];
+        return dealsRaw
+            .map((d) => _parseDeal(d as Map<String, dynamic>))
+            .toList();
+      } else {
+        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+        throw ServerException(
+          message: errorData['message'] as String? ??
+              'Failed to fetch deal of the day numbers',
+          statusCode: response.statusCode.toString(),
+        );
+      }
+    } on SocketException {
+      throw const NetworkException(
+        message: 'No internet connection',
+        statusCode: '503',
+      );
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(message: e.toString(), statusCode: '500');
+    }
+  }
+
+  /// Parses a deal-of-the-day entry into a [PhoneNumberModel]. The deal's
+  /// `extraDiscount` (a flat rupee amount) is applied on top of the nested
+  /// product's own final price to get the deal's actual selling price.
+  PhoneNumberModel _parseDeal(Map<String, dynamic> map) {
+    final productRaw = map['product'] as Map<String, dynamic>? ?? {};
+    final base = _parseProduct(productRaw);
+
+    final extraDiscount = (map['extraDiscount'] as num?)?.toDouble() ?? 0;
+    final originalPrice = base.originalPrice ?? base.price;
+    final finalPrice = (base.price - extraDiscount).clamp(0, originalPrice);
+    final discount = originalPrice > 0
+        ? (((originalPrice - finalPrice) / originalPrice) * 100).round()
+        : (map['originalDiscount'] as num?)?.toInt() ?? 0;
+
+    // The deal API returns the category as an unpopulated ID string rather
+    // than a name, so it isn't fit to display as-is; fall back to empty.
+    final categoryIsRawId = productRaw['category'] is String;
+
+    return PhoneNumberModel(
+      id: base.id,
+      number: base.number,
+      price: finalPrice.toDouble(),
+      originalPrice: originalPrice,
+      discount: discount,
+      category: categoryIsRawId ? '' : base.category,
+      categoryId: base.categoryId,
+      operator: base.operator,
+      features: base.features,
+      numerology: base.numerology,
+      isRTP: base.isRTP,
+      isCRTP: base.isCRTP,
+      isFeatured: base.isFeatured,
+      isTrending: base.isTrending,
+      isAvailable: base.isAvailable,
+      createdAt: base.createdAt,
     );
   }
 

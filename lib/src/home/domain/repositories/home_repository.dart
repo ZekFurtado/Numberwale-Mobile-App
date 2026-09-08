@@ -19,4 +19,7 @@ abstract class HomeRepository {
 
   /// Fetches discounted numbers for the home screen
   ResultFuture<List<PhoneNumber>> getDiscountedNumbers({int limit = 10});
+
+  /// Fetches the actively running "Deal of the Day" numbers
+  ResultFuture<List<PhoneNumber>> getDealOfTheDay();
 }

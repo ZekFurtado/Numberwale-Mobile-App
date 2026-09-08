@@ -26,6 +26,12 @@ abstract class HomeLocalDataSource {
   /// Gets cached discounted numbers from local storage
   Future<List<PhoneNumberModel>> getCachedDiscountedNumbers();
 
+  /// Caches deal of the day numbers locally
+  Future<void> cacheDealOfTheDay(List<PhoneNumberModel> numbers);
+
+  /// Gets cached deal of the day numbers from local storage
+  Future<List<PhoneNumberModel>> getCachedDealOfTheDay();
+
   /// Clears all home screen cached data
   Future<void> clearCache();
 }
@@ -37,6 +43,7 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
   static const String _bannersCacheKey = 'CACHED_HOME_BANNERS';
   static const String _categoriesCacheKey = 'CACHED_HOME_CATEGORIES';
   static const String _discountedNumbersCacheKey = 'CACHED_DISCOUNTED_NUMBERS';
+  static const String _dealOfTheDayCacheKey = 'CACHED_DEAL_OF_THE_DAY';
 
   HomeLocalDataSourceImpl(this._sharedPreferences);
 
@@ -166,12 +173,54 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
   }
 
   @override
+  Future<void> cacheDealOfTheDay(List<PhoneNumberModel> numbers) async {
+    try {
+      final numbersJson = numbers.map((n) => n.toMap()).toList();
+      await _sharedPreferences.setString(
+        _dealOfTheDayCacheKey,
+        jsonEncode(numbersJson),
+      );
+    } catch (e) {
+      throw CacheException(
+        statusCode: '500',
+        message: 'Failed to cache deal of the day numbers: $e',
+      );
+    }
+  }
+
+  @override
+  Future<List<PhoneNumberModel>> getCachedDealOfTheDay() async {
+    try {
+      final cachedString = _sharedPreferences.getString(_dealOfTheDayCacheKey);
+
+      if (cachedString == null) {
+        throw const CacheException(
+          statusCode: '404',
+          message: 'No cached deal of the day numbers found',
+        );
+      }
+
+      final List<dynamic> numbersJson =
+          jsonDecode(cachedString) as List<dynamic>;
+      return numbersJson
+          .map((json) => PhoneNumberModel.fromMap(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw CacheException(
+        statusCode: '500',
+        message: 'Failed to get cached deal of the day numbers: $e',
+      );
+    }
+  }
+
+  @override
   Future<void> clearCache() async {
     try {
       await Future.wait([
         _sharedPreferences.remove(_bannersCacheKey),
         _sharedPreferences.remove(_categoriesCacheKey),
         _sharedPreferences.remove(_discountedNumbersCacheKey),
+        _sharedPreferences.remove(_dealOfTheDayCacheKey),
       ]);
     } catch (e) {
       throw CacheException(

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/models/filter_models.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/category_section.dart';
+import 'package:numberwale/core/widgets/deal_of_the_day_section.dart';
 import 'package:numberwale/core/widgets/featured_numbers_section.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
 import 'package:numberwale/core/widgets/image_banner_carousel.dart';
@@ -10,6 +11,7 @@ import 'package:numberwale/core/widgets/number_search_bar.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/corporate_pack/presentation/widgets/corporate_elite_pack_section.dart';
+import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
 
 class HomePage extends StatefulWidget {
@@ -165,8 +167,10 @@ class _HomePageState extends State<HomePage> {
     final List<CategoryItem> categories;
     final List<FeaturedNumber> discountedNumbers;
     final List<FeaturedNumber> newlyAddedNumbers;
+    final List<PhoneNumber> dealOfTheDayNumbers;
 
     if (state is HomeDataLoaded) {
+      dealOfTheDayNumbers = state.dealOfTheDayNumbers;
       categories = state.categories.isEmpty
           ? _getMockCategories(context).take(4).toList()
           : state.categories.take(4).map((cat) {
@@ -222,6 +226,7 @@ class _HomePageState extends State<HomePage> {
       categories = _getMockCategories(context).take(4).toList();
       discountedNumbers = [];
       newlyAddedNumbers = [];
+      dealOfTheDayNumbers = [];
     }
 
     return Scaffold(
@@ -332,6 +337,19 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                   if (newlyAddedNumbers.isNotEmpty) const SizedBox(height: 32),
+
+                  // Deal of the Day
+                  if (dealOfTheDayNumbers.isNotEmpty) ...[
+                    DealOfTheDaySection(
+                      numbers: dealOfTheDayNumbers,
+                      onClaim: (pn) => Navigator.pushNamed(
+                        context,
+                        Routes.productDetail,
+                        arguments: pn.number,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
 
                   // Corporate Elite Pack (Jodi)
                   const CorporateElitePackSection(),
