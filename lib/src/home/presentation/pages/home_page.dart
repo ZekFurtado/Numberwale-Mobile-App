@@ -4,11 +4,12 @@ import 'package:numberwale/core/models/filter_models.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/category_section.dart';
 import 'package:numberwale/core/widgets/deal_of_the_day_section.dart';
-import 'package:numberwale/core/widgets/featured_numbers_section.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
 import 'package:numberwale/core/widgets/image_banner_carousel.dart';
 import 'package:numberwale/core/widgets/number_search_bar.dart';
+import 'package:numberwale/core/widgets/vip_numbers_section.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
+import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/corporate_pack/presentation/widgets/corporate_elite_pack_section.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
@@ -165,8 +166,8 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
 
     final List<CategoryItem> categories;
-    final List<FeaturedNumber> discountedNumbers;
-    final List<FeaturedNumber> newlyAddedNumbers;
+    final List<VipNumber> newlyAddedNumbers;
+    final List<VipNumber> premiumNumbers;
     final List<PhoneNumber> dealOfTheDayNumbers;
 
     if (state is HomeDataLoaded) {
@@ -183,14 +184,11 @@ class _HomePageState extends State<HomePage> {
               );
             }).toList();
 
-      discountedNumbers = state.discountedNumbers.map((pn) {
-        return FeaturedNumber(
+      premiumNumbers = state.premiumNumbers.map((pn) {
+        return VipNumber(
           phoneNumber: pn.number,
           price: pn.price,
           category: pn.category,
-          features: pn.features,
-          discount: pn.discount > 0 ? pn.discount.toDouble() : null,
-          isFeatured: pn.isFeatured,
           numerology: pn.numerology,
           onTap: () => Navigator.pushNamed(
             context,
@@ -204,13 +202,10 @@ class _HomePageState extends State<HomePage> {
       }).toList();
 
       newlyAddedNumbers = state.newlyAddedNumbers.map((pn) {
-        return FeaturedNumber(
+        return VipNumber(
           phoneNumber: pn.number,
           price: pn.price,
           category: pn.category,
-          features: pn.features,
-          discount: pn.discount > 0 ? pn.discount.toDouble() : null,
-          isFeatured: pn.isFeatured,
           numerology: pn.numerology,
           onTap: () => Navigator.pushNamed(
             context,
@@ -224,7 +219,7 @@ class _HomePageState extends State<HomePage> {
       }).toList();
     } else {
       categories = _getMockCategories(context).take(4).toList();
-      discountedNumbers = [];
+      premiumNumbers = [];
       newlyAddedNumbers = [];
       dealOfTheDayNumbers = [];
     }
@@ -327,9 +322,12 @@ class _HomePageState extends State<HomePage> {
 
                   // Newly Added VIP Numbers
                   if (newlyAddedNumbers.isNotEmpty)
-                    FeaturedNumbersSection(
+                    VipNumbersSection(
                       title: 'Newly Added VIP Numbers',
-                      subtitle: 'Fresh numbers added this week',
+                      subtitle: "Fresh numbers uploaded in the last 7 days. "
+                          "Grab them before they're gone!",
+                      badgeLabel: 'New',
+                      badgeIcon: Icons.auto_awesome,
                       numbers: newlyAddedNumbers,
                       onSeeAllTap: () {
                         Navigator.pushNamed(
@@ -355,17 +353,18 @@ class _HomePageState extends State<HomePage> {
                   const CorporateElitePackSection(),
                   const SizedBox(height: 32),
 
-                  // Discounted Numbers
-                  if (discountedNumbers.isNotEmpty)
-                    FeaturedNumbersSection(
-                      title: 'Discounted Numbers',
-                      subtitle: 'Special offers and deals',
-                      numbers: discountedNumbers,
+                  // Premium Numbers
+                  if (premiumNumbers.isNotEmpty)
+                    VipNumbersSection(
+                      title: 'Premium Numbers',
+                      subtitle: 'Premium numbers available at best prices. '
+                          "Grab them before they're gone!",
+                      numbers: premiumNumbers,
                       onSeeAllTap: () {
                         context.read<AppNavigationCubit>().selectTab(1);
                       },
                     ),
-                  if (discountedNumbers.isNotEmpty) const SizedBox(height: 32),
+                  if (premiumNumbers.isNotEmpty) const SizedBox(height: 32),
 
                 ],
               ),
@@ -380,43 +379,364 @@ class _HomePageState extends State<HomePage> {
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer();
 
+  static const _navy = Color(0xFF1A1A2E);
+  static const _logoOrange = Color(0xFFFF6A1F);
+  static const _tagline = Color(0xFF9A9A9A);
+  static const _dividerColor = Color(0xFFEDEDED);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Drawer(
+      backgroundColor: Colors.white,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
+            const SizedBox(height: 20),
+            const _DrawerLogo(),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: _dividerColor),
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Icon(Icons.phone_android, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Numberwale',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                builder: (context, state) {
+                  final isAuthenticated = state is Authenticated;
+                  return _AuthButton(
+                    label: isAuthenticated ? 'My Account' : 'Sign In',
+                    icon:
+                        isAuthenticated ? Icons.person : Icons.person_outline,
+                    color: theme.colorScheme.primary,
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (isAuthenticated) {
+                        context.read<AppNavigationCubit>().selectTab(3);
+                      } else {
+                        Navigator.pushNamed(context, Routes.login);
+                      }
+                    },
+                  );
+                },
               ),
             ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome),
-              title: const Text('Numerology'),
+            const SizedBox(height: 4),
+            const Divider(height: 1, color: _dividerColor),
+            _DrawerNavItem(
+              label: 'Home',
+              onTap: () => Navigator.pop(context),
+            ),
+            _DrawerNavItem(
+              label: 'Premium Numbers',
+              onTap: () {
+                Navigator.pop(context);
+                context.read<AppNavigationCubit>().selectTab(1);
+              },
+            ),
+            _DrawerNavItem(
+              label: 'Offer Zone',
+              onTap: () {
+                Navigator.pop(context);
+                context.read<AppNavigationCubit>().selectTab(2);
+              },
+            ),
+            _DrawerNavItem(
+              label: '5-Min Activation No.',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Routes.fiveMinActivationNumbers);
+              },
+            ),
+            _DrawerNavItem(
+              label: 'Corporate Elite Pack',
+              highlighted: true,
+              onTap: () => Navigator.pop(context),
+            ),
+            _DrawerNavItem(
+              label: 'Numerology',
+              trailing: const _NewBadge(),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, Routes.numerology);
               },
             ),
+            _DrawerNavItem(
+              label: 'Contact Us',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Routes.contactUs);
+              },
+            ),
+            const Divider(height: 1, color: _dividerColor),
+            _ProductsSection(
+              onItemTap: () => Navigator.pop(context),
+            ),
+            const Divider(height: 1, color: _dividerColor),
+            ListTile(
+              leading: const Icon(Icons.shopping_cart_outlined, color: _navy),
+              title: const Text(
+                'Cart',
+                style: TextStyle(
+                  color: _navy,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Routes.cart);
+              },
+            ),
+            const SizedBox(height: 12),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DrawerLogo extends StatelessWidget {
+  const _DrawerLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        RichText(
+          text: const TextSpan(
+            children: [
+              TextSpan(
+                text: 'Number',
+                style: TextStyle(
+                  color: _AppDrawer._navy,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                ),
+              ),
+              TextSpan(
+                text: 'Wale',
+                style: TextStyle(
+                  color: _AppDrawer._logoOrange,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 90,
+          height: 2,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [_AppDrawer._logoOrange, Colors.transparent],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Because Number Matters',
+          style: TextStyle(
+            color: _AppDrawer._tagline,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AuthButton extends StatelessWidget {
+  const _AuthButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerNavItem extends StatelessWidget {
+  const _DrawerNavItem({
+    required this.label,
+    required this.onTap,
+    this.highlighted = false,
+    this.trailing,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool highlighted;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: highlighted
+            ? const EdgeInsets.symmetric(horizontal: 12, vertical: 2)
+            : EdgeInsets.zero,
+        padding: EdgeInsets.symmetric(
+          horizontal: highlighted ? 12 : 20,
+          vertical: 14,
+        ),
+        decoration: highlighted
+            ? BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              )
+            : null,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: highlighted
+                      ? theme.colorScheme.primary
+                      : _AppDrawer._navy,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ?trailing,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewBadge extends StatelessWidget {
+  const _NewBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: _AppDrawer._logoOrange,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'NEW',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+}
+
+/// The "Products" expandable section (Smart IVR, SMS Solutions, WhatsApp
+/// API). These sub-pages aren't built yet, so [onItemTap] only closes the
+/// drawer for now.
+class _ProductsSection extends StatefulWidget {
+  const _ProductsSection({required this.onItemTap});
+
+  final VoidCallback onItemTap;
+
+  @override
+  State<_ProductsSection> createState() => _ProductsSectionState();
+}
+
+class _ProductsSectionState extends State<_ProductsSection> {
+  bool _expanded = true;
+
+  static const _items = ['Smart IVR', 'SMS Solutions', 'Whatsapp API'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Products',
+                    style: TextStyle(
+                      color: _AppDrawer._navy,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: _AppDrawer._navy,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded)
+          ..._items.map(
+            (item) => InkWell(
+              onTap: widget.onItemTap,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(32, 12, 20, 12),
+                child: Text(
+                  item.toUpperCase(),
+                  style: const TextStyle(
+                    color: _AppDrawer._navy,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
