@@ -21,6 +21,24 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
   ProfileRemoteDataSourceImpl(this._client);
 
+  /// `/user/profile` responses aren't consistently enveloped — confirmed
+  /// against numberwale.com's own client, whose GET reads `response.data.user`
+  /// directly (no `data` wrapper), unlike most other endpoints in this API.
+  /// Resolve whichever shape actually comes back instead of assuming one.
+  DataMap _extractUser(DataMap body) {
+    final direct = body['user'];
+    if (direct is DataMap) return direct;
+
+    final nested = body['data'];
+    if (nested is DataMap) {
+      final nestedUser = nested['user'];
+      if (nestedUser is DataMap) return nestedUser;
+      return nested;
+    }
+
+    return body;
+  }
+
   @override
   Future<UserProfileModel> getProfile() async {
     try {
@@ -31,8 +49,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;
-        final userData = (data['data'] as DataMap)['user'] as DataMap;
-        return UserProfileModel.fromMap(userData);
+        return UserProfileModel.fromMap(_extractUser(data));
       } else {
         final errorData = jsonDecode(response.body) as DataMap;
         throw ServerException(
@@ -63,8 +80,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;
-        final userData = (data['data'] as DataMap)['user'] as DataMap;
-        return UserProfileModel.fromMap(userData);
+        return UserProfileModel.fromMap(_extractUser(data));
       } else {
         final errorData = jsonDecode(response.body) as DataMap;
         throw ServerException(

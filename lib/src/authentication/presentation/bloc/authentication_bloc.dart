@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:numberwale/src/authentication/domain/entities/local_user.dart';
 import 'package:numberwale/src/authentication/domain/usecases/forgot_password.dart';
+import 'package:numberwale/src/authentication/domain/usecases/get_current_user.dart';
 import 'package:numberwale/src/authentication/domain/usecases/login.dart';
 import 'package:numberwale/src/authentication/domain/usecases/register.dart';
 import 'package:numberwale/src/authentication/domain/usecases/resend_otp.dart';
@@ -24,6 +25,7 @@ class AuthenticationBloc
     required ForgotPassword forgotPassword,
     required ResetPassword resetPassword,
     required ResendOtp resendOtp,
+    required GetCurrentUser getCurrentUser,
   }) : _signOutUseCase = signOutUser,
        _registerUseCase = register,
        _loginUseCase = login,
@@ -32,6 +34,7 @@ class AuthenticationBloc
        _forgotPasswordUseCase = forgotPassword,
        _resetPasswordUseCase = resetPassword,
        _resendOtpUseCase = resendOtp,
+       _getCurrentUserUseCase = getCurrentUser,
        super(const AuthenticationInitial()) {
     on<SignOutUserEvent>(_signOutUserEventHandler);
     on<RegisterUserEvent>(_registerUserEventHandler);
@@ -41,6 +44,7 @@ class AuthenticationBloc
     on<ForgotPasswordEvent>(_forgotPasswordEventHandler);
     on<ResetPasswordEvent>(_resetPasswordEventHandler);
     on<ResendOTPEvent>(_resendOTPEventHandler);
+    on<GetUserSessionEvent>(_getUserSessionEventHandler);
   }
 
   final SignOutUseCase _signOutUseCase;
@@ -51,10 +55,27 @@ class AuthenticationBloc
   final ForgotPassword _forgotPasswordUseCase;
   final ResetPassword _resetPasswordUseCase;
   final ResendOtp _resendOtpUseCase;
+  final GetCurrentUser _getCurrentUserUseCase;
 
   // Store contact info for OTP verification
   String? _lastEmail;
   String? _lastMobile;
+
+  /// Restores state from a previously cached session (e.g. right after an
+  /// app restart) purely from local storage, so pages that fall back to
+  /// [AuthenticationBloc]'s user (the profile summary, cart's profile card,
+  /// etc.) have data immediately instead of showing blank/"Loading..." until
+  /// a network call resolves. Emits nothing when there's no cached user —
+  /// staying on the current state is correct, not a sign-out.
+  Future<void> _getUserSessionEventHandler(
+    GetUserSessionEvent event,
+    Emitter<AuthenticationState> emit,
+  ) async {
+    final user = await _getCurrentUserUseCase();
+    if (user != null) {
+      emit(LoggedIn(user: user));
+    }
+  }
 
   Future<void> _signOutUserEventHandler(
     SignOutUserEvent event,

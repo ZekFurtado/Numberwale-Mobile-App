@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/utils/fancy_number_spans.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
+import 'package:numberwale/core/widgets/premium_number_card.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
@@ -11,7 +12,7 @@ import 'package:numberwale/src/wishlist/presentation/bloc/wishlist_bloc.dart';
 
 const _orange = Color(0xFFFF8401);
 const _navy = Color(0xFF1A1A2E);
-const _cardBorder = Color(0xFFFFD0A0);
+const _cardBorder = kPremiumCardBorder;
 
 /// Everything the customer has hearted — single numbers and Corporate Elite
 /// Packs alike.
@@ -115,49 +116,32 @@ class _NumberTile extends StatelessWidget {
     final number = item.numbers.first;
     final enquiryOnly = _isEnquiryOnly(number.discountedPrice);
 
-    return _WishlistCard(
+    return PremiumNumberCard(
+      phoneNumber: number.number,
+      price: number.discountedPrice,
+      category: number.category,
+      numerology: number.numerology,
       onTap: () => Navigator.pushNamed(
         context,
         Routes.productDetail,
         arguments: number.number,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: _NumberText(number: number.number)),
-              _RemoveButton(item: item),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              if (number.category.isNotEmpty) ...[
-                _Pill(label: number.category.toUpperCase()),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                _formatRupees(number.discountedPrice),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: _orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: enquiryOnly
-                    ? _EnquireButton(number: number.number)
-                    : _AddToCartButton(number: number),
-              ),
-            ],
-          ),
-        ],
+      trailing: PremiumCardBadge(
+        icon: Icons.favorite,
+        iconColor: _orange,
+        tooltip: 'Remove from wishlist',
+        onTap: () => context.read<WishlistBloc>().add(ToggleWishlistEvent(
+              itemId: item.id,
+              type: item.type,
+              packSize: item.packSize,
+            )),
+      ),
+      actions: SizedBox(
+        width: double.infinity,
+        height: 44,
+        child: enquiryOnly
+            ? _EnquireButton(number: number.number)
+            : _AddToCartButton(number: number),
       ),
     );
   }
@@ -236,25 +220,20 @@ class _PackTile extends StatelessWidget {
 }
 
 class _WishlistCard extends StatelessWidget {
-  const _WishlistCard({required this.child, this.onTap});
+  const _WishlistCard({required this.child});
 
   final Widget child;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _cardBorder, width: 1.5),
-        ),
-        child: child,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _cardBorder, width: 1.5),
       ),
+      child: child,
     );
   }
 }
@@ -328,8 +307,7 @@ class _AddToCartButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: _orange,
         side: const BorderSide(color: _orange),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
     );
   }
@@ -354,34 +332,7 @@ class _EnquireButton extends StatelessWidget {
         backgroundColor: const Color(0xFF2D3748),
         foregroundColor: Colors.white,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _orange),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: _orange,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
     );
   }

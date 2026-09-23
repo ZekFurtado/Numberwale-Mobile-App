@@ -18,6 +18,7 @@ import '../../src/authentication/domain/usecases/forgot_password.dart';
 import '../../src/authentication/domain/usecases/reset_password.dart';
 import '../../src/authentication/domain/usecases/resend_otp.dart';
 import '../../src/authentication/domain/usecases/refresh_token.dart';
+import '../../src/authentication/domain/usecases/get_current_user.dart';
 import '../../src/authentication/presentation/bloc/authentication_bloc.dart';
 import '../../src/address/data/datasources/address_local_data_source.dart';
 import '../../src/address/data/datasources/address_remote_data_source.dart';
@@ -128,6 +129,7 @@ Future<void> init() async {
         forgotPassword: sl(),
         resetPassword: sl(),
         resendOtp: sl(),
+        getCurrentUser: sl(),
     )
     )
     // () => AuthenticationCubit(createUser: sl(), emailSignIn: sl()))
@@ -225,6 +227,7 @@ Future<void> init() async {
     ..registerLazySingleton(() => ResetPassword(sl()))
     ..registerLazySingleton(() => ResendOtp(sl()))
     ..registerLazySingleton(() => RefreshToken(sl()))
+    ..registerLazySingleton(() => GetCurrentUser(sl()))
 
     /// Address
     ..registerLazySingleton(() => GetAddresses(sl()))

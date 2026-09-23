@@ -70,7 +70,7 @@ class _AddressSelectionPageState extends State<AddressSelectionPage> {
     );
   }
 
-  void _continueToSummary(List<Address> addresses) {
+  void _useSelectedAddress(List<Address> addresses) {
     if (_selectedAddressId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select an address')),
@@ -78,24 +78,17 @@ class _AddressSelectionPageState extends State<AddressSelectionPage> {
       return;
     }
 
-    final selected = addresses.firstWhere(
-      (a) => a.id == _selectedAddressId,
-    );
+    final selected = addresses.firstWhere((a) => a.id == _selectedAddressId);
 
-    Navigator.pushNamed(
-      context,
-      Routes.orderSummary,
-      arguments: {
-        'id': selected.id ?? '',
-        'addressLine1': selected.addressLine1,
-        'addressLine2': selected.addressLine2,
-        'landmark': selected.landmark,
-        'city': selected.city,
-        'state': selected.state,
-        'pinCode': selected.pinCode,
-        'isPrimary': selected.isPrimary,
-      },
-    );
+    // Already the delivery address — nothing to change, just go back.
+    if (selected.isPrimary) {
+      Navigator.pop(context);
+      return;
+    }
+
+    context.read<AddressBloc>().add(
+          SetPrimaryAddressEvent(addressId: selected.id!),
+        );
   }
 
   @override
@@ -129,6 +122,9 @@ class _AddressSelectionPageState extends State<AddressSelectionPage> {
               setState(() => _selectedAddressId = null);
             }
             context.read<AddressBloc>().add(const GetAddressesEvent());
+          } else if (state is PrimaryAddressSet) {
+            context.read<AddressBloc>().add(const GetAddressesEvent());
+            Navigator.pop(context);
           }
         },
         builder: (context, state) {
@@ -202,9 +198,18 @@ class _AddressSelectionPageState extends State<AddressSelectionPage> {
                       ),
                       const SizedBox(height: 12),
                       FilledButton.icon(
-                        onPressed: () => _continueToSummary(addresses),
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Continue to Order Summary'),
+                        onPressed: state is SettingPrimaryAddress
+                            ? null
+                            : () => _useSelectedAddress(addresses),
+                        icon: state is SettingPrimaryAddress
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.check),
+                        label: const Text('Use This Address'),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
                         ),

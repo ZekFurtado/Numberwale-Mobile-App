@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:numberwale/core/errors/failures.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/src/authentication/data/datasources/auth_local_data_source.dart';
 import 'package:numberwale/src/authentication/domain/usecases/refresh_token.dart';
+import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -57,12 +60,29 @@ class _SplashScreenState extends State<SplashScreen>
     } else if (cachedUser == null) {
       nextRoute = Routes.login;
     } else {
-      // Verify the server session is still active.
-      final isValid = await _verifySession();
-      if (!isValid) {
+      // Try to refresh the session so a fresh access token/cookie is ready,
+      // but only treat it as gone when the server actively rejects the
+      // refresh token (401/403) — a real "you're logged out". Any other
+      // failure (no internet yet on a cold start, a slow/broken backend,
+      // a stray exception) is inconclusive, not proof the session is
+      // invalid, so the cached session is kept either way. A genuine
+      // mid-session 401 later is still caught by
+      // AuthenticatedClient.onUnauthorized (wired in main.dart), which is
+      // the same mechanism this used to skip.
+      final rejected = await _sessionExplicitlyRejected();
+      if (rejected) {
         await di.sl<AuthLocalDataSource>().clearCache();
+        nextRoute = Routes.login;
+      } else {
+        // Hydrate AuthenticationBloc from the cached user so pages that
+        // fall back to it (profile summary, cart's profile card) have data
+        // immediately instead of sitting on AuthenticationInitial until
+        // ProfileBloc's own network call resolves.
+        if (mounted) {
+          context.read<AuthenticationBloc>().add(const GetUserSessionEvent());
+        }
+        nextRoute = Routes.appShell;
       }
-      nextRoute = isValid ? Routes.appShell : Routes.login;
     }
 
     await minDisplay;
@@ -71,10 +91,17 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.pushReplacementNamed(context, nextRoute);
   }
 
-  Future<bool> _verifySession() async {
+  /// True only when the server actively rejected the refresh token
+  /// (401/403). Never true for network errors or other transient failures.
+  Future<bool> _sessionExplicitlyRejected() async {
     try {
       final result = await di.sl<RefreshToken>()();
-      return result.isRight();
+      return result.fold(
+        (failure) =>
+            failure is! NetworkFailure &&
+            (failure.statusCode == '401' || failure.statusCode == '403'),
+        (_) => false,
+      );
     } catch (_) {
       return false;
     }

@@ -81,4 +81,8 @@ abstract class AuthRepository {
   /// Refresh authentication tokens
   /// Returns updated user data on success
   ResultFuture<LocalUser> refreshToken();
+
+  /// Returns the locally cached user from a previous session, or null if
+  /// there isn't one. Never hits the network.
+  Future<LocalUser?> getCurrentUser();
 }

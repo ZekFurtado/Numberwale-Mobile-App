@@ -23,7 +23,7 @@ class CheckoutResultModel extends CheckoutResult {
     // the app (Order Success display, etc.) can treat CheckoutResult.amount
     // like every other amount in the app. Confirmed against a real Razorpay
     // "amount/order_id mismatch" failure: the SDK needs paise, computed by
-    // multiplying this (rupee) value back by 100 — see order_summary_page's
+    // multiplying this (rupee) value back by 100 — see CartPage's
     // _openRazorpay.
     final rawAmount = (data['amount'] as num? ?? 0).toDouble();
 

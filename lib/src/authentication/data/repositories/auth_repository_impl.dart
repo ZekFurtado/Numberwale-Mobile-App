@@ -284,4 +284,15 @@ class AuthRepositoryImpl implements AuthRepository {
       ));
     }
   }
+
+  @override
+  Future<LocalUser?> getCurrentUser() async {
+    try {
+      return await localDataSource.getCachedUser();
+    } catch (_) {
+      // A corrupted/unreadable cache just means there's nothing to restore
+      // — not a reason to throw from a plain local read.
+      return null;
+    }
+  }
 }

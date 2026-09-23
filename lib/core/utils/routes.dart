@@ -21,7 +21,6 @@ import 'package:numberwale/src/products/presentation/pages/five_min_activation_n
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/cart/presentation/pages/cart_page.dart';
 import 'package:numberwale/src/checkout/presentation/pages/address_selection_page.dart';
-import 'package:numberwale/src/checkout/presentation/pages/order_summary_page.dart';
 import 'package:numberwale/src/checkout/presentation/pages/order_success_page.dart';
 import 'package:numberwale/src/orders/presentation/pages/orders_page.dart';
 import 'package:numberwale/src/orders/presentation/pages/order_detail_page.dart';
@@ -69,13 +68,12 @@ class Routes {
   static const String newlyAddedVipNumbers = '/newly-added-vip-numbers';
   static const String fiveMinActivationNumbers = '/5-min-activation-numbers';
 
-  // Cart & Checkout
+  // Cart & Checkout — checkout itself (address, order summary, payment
+  // method) all live on the Cart page; addressSelection is only used to
+  // pick a different saved address from there.
   static const String cart = '/cart';
-  static const String checkout = '/checkout';
   static const String addressSelection = '/checkout/address';
   static const String addressForm = '/checkout/address/form';
-  static const String orderSummary = '/checkout/summary';
-  static const String payment = '/checkout/payment';
   static const String orderSuccess = '/checkout/success';
 
   // Orders
@@ -148,8 +146,7 @@ class Routes {
         // Cart
         cart: (context) => const CartPage(),
 
-        // Checkout
-        checkout: (context) => const AddressSelectionPage(),
+        // Checkout — picking a different saved address from the cart page
         addressSelection: (context) => const AddressSelectionPage(),
 
         // Orders
@@ -257,16 +254,6 @@ class Routes {
         if (args is String) {
           return MaterialPageRoute(
             builder: (_) => OrderDetailPage(orderId: args),
-            settings: settings,
-          );
-        }
-        break;
-
-      // Order Summary (with delivery address parameter)
-      case orderSummary:
-        if (args is Map<String, dynamic>) {
-          return MaterialPageRoute(
-            builder: (_) => OrderSummaryPage(deliveryAddress: args),
             settings: settings,
           );
         }

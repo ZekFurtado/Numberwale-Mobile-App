@@ -20,6 +20,14 @@ class CartItem extends Equatable {
   /// Optional image URL for the product
   final String? imageUrl;
 
+  /// Category name (VIP, Fancy, Lucky, etc.), when the backend's cart
+  /// response includes the nested product.
+  final String? category;
+
+  /// Numerology details (sum/liters, trap, score), when the backend's cart
+  /// response includes the nested product.
+  final Map<String, dynamic>? numerology;
+
   const CartItem({
     this.id,
     required this.productId,
@@ -27,6 +35,8 @@ class CartItem extends Equatable {
     required this.price,
     required this.quantity,
     this.imageUrl,
+    this.category,
+    this.numerology,
   });
 
   @override

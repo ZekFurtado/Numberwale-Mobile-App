@@ -14,6 +14,8 @@ class CartItemModel extends CartItem {
     required super.price,
     required super.quantity,
     super.imageUrl,
+    super.category,
+    super.numerology,
   });
 
   /// Creates a CartItemModel from a Map.
@@ -71,6 +73,25 @@ class CartItemModel extends CartItem {
         ? null // product object has no cart-row id yet
         : (map['_id'] as String? ?? map['id'] as String?);
 
+    // Category and numerology (SUM/TRAP/SCORE) — same shape as the products
+    // API's product object, parsed the same way as
+    // HomeRemoteDataSourceImpl._parseProduct.
+    final DataMap sourceMap = productMap.isNotEmpty ? productMap : map;
+    String? categoryName;
+    final categoryRaw = sourceMap['category'];
+    if (categoryRaw is Map) {
+      categoryName = categoryRaw['name'] as String?;
+    } else if (categoryRaw is String && categoryRaw.isNotEmpty) {
+      categoryName = categoryRaw;
+    }
+
+    final numerologyMap = <String, dynamic>{
+      ...?(sourceMap['numerology'] as DataMap?),
+      if (sourceMap['liters'] != null) 'liters': sourceMap['liters'],
+      if (sourceMap['trap'] != null) 'trap': sourceMap['trap'],
+      if (sourceMap['score'] != null) 'score': sourceMap['score'],
+    };
+
     return CartItemModel(
       id: itemId,
       productId: productId,
@@ -78,6 +99,8 @@ class CartItemModel extends CartItem {
       price: price,
       quantity: (map['quantity'] as num? ?? 1).toInt(),
       imageUrl: map['imageUrl'] as String? ?? map['image_url'] as String?,
+      category: categoryName,
+      numerology: numerologyMap.isEmpty ? null : numerologyMap,
     );
   }
 }
