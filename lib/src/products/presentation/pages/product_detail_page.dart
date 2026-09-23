@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:numberwale/core/utils/product_actions.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Mirrors numberwale.com/premium-numbers/{number} — see product_detail_page
 /// screenshots this was built from.
@@ -24,10 +25,7 @@ const _peachBg = Color(0xFFFDF4EA);
 const _pageBg = Color(0xFFF7F5F2);
 
 class ProductDetailPage extends StatelessWidget {
-  const ProductDetailPage({
-    super.key,
-    required this.phoneNumber,
-  });
+  const ProductDetailPage({super.key, required this.phoneNumber});
 
   final String phoneNumber;
 
@@ -49,51 +47,26 @@ class _ProductDetailView extends StatefulWidget {
 class _ProductDetailViewState extends State<_ProductDetailView> {
   bool _isAddingToCart = false;
   bool _isBuyingNow = false;
-  bool _isWishlisted = false;
   int? _expandedFaqIndex;
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<CartBloc, CartState>(
-      listenWhen: (_, current) =>
-          current is CartLoaded || current is CartError,
+      listenWhen: (_, current) => current is CartLoaded || current is CartError,
       listener: (context, state) {
         if (!_isAddingToCart && !_isBuyingNow) return;
-        if (state is CartLoaded) {
-          final wasBuyingNow = _isBuyingNow;
+        // The confirmation snackbar and the Buy Now hand-off to the cart are
+        // both handled app-wide in main.dart — all this page still owns is
+        // its own button spinners.
+        if (state is CartLoaded || state is CartError) {
           setState(() {
             _isAddingToCart = false;
             _isBuyingNow = false;
           });
-          if (wasBuyingNow) {
-            Navigator.pushNamed(context, Routes.cart);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Added to cart'),
-                action: SnackBarAction(
-                  label: 'View Cart',
-                  onPressed: () => Navigator.pushNamed(context, Routes.cart),
-                ),
-              ),
-            );
-          }
-        } else if (state is CartError) {
-          setState(() {
-            _isAddingToCart = false;
-            _isBuyingNow = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
         }
       },
-      builder: (context, _) => BlocBuilder<ProductBloc, ProductState>(
-        builder: _buildContent,
-      ),
+      builder: (context, _) =>
+          BlocBuilder<ProductBloc, ProductState>(builder: _buildContent),
     );
   }
 
@@ -105,7 +78,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
 
   void _addToCart(PhoneNumber product) {
     setState(() => _isAddingToCart = true);
-    context.read<CartBloc>().add(AddToCartEvent(productId: product.id!));
+    ProductActions.addToCart(context, product);
   }
 
   // "Buy Now" adds this number to whatever's already in the cart, then
@@ -113,12 +86,19 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
   // items they don't want before checking out.
   void _buyNow(PhoneNumber product) {
     setState(() => _isBuyingNow = true);
-    context.read<CartBloc>().add(AddToCartEvent(productId: product.id!));
+    ProductActions.buyNow(context, product);
+  }
+
+  /// Numbers above the online-purchase limit go through the enquiry form
+  /// instead of the cart.
+  void _enquire(PhoneNumber product) {
+    ProductActions.enquire(context, product);
   }
 
   void _goToExplore() {
-    Navigator.of(context)
-        .popUntil((route) => route.settings.name == Routes.appShell);
+    Navigator.of(
+      context,
+    ).popUntil((route) => route.settings.name == Routes.appShell);
     context.read<AppNavigationCubit>().selectTab(1);
   }
 
@@ -142,9 +122,9 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
               Text(state.message, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: () => context
-                    .read<ProductBloc>()
-                    .add(LoadProductByNumberEvent(number: widget.phoneNumber)),
+                onPressed: () => context.read<ProductBloc>().add(
+                  LoadProductByNumberEvent(number: widget.phoneNumber),
+                ),
                 child: const Text('Retry'),
               ),
             ],
@@ -172,7 +152,8 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
     final cgst = gst / 2;
     final total = basePrice + gst;
 
-    final canBuy = product.id != null &&
+    final canBuy =
+        product.id != null &&
         product.isAvailable &&
         !_isAddingToCart &&
         !_isBuyingNow;
@@ -205,9 +186,9 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                 cgst: cgst,
                 total: total,
                 rtpLabel: _rtpLabel(product),
-                isWishlisted: _isWishlisted,
+                isWishlisted: watchIsWishlisted(context, product.id),
                 onWishlistToggle: () =>
-                    setState(() => _isWishlisted = !_isWishlisted),
+                    ProductActions.toggleWishlist(context, product),
                 onShare: () => Share.share(
                   'Check out this premium number: ${product.number}\n'
                   'Available at Numberwale',
@@ -227,6 +208,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                 canBuy: canBuy,
                 onAddToCart: () => _addToCart(product),
                 onBuyNow: () => _buyNow(product),
+                onEnquire: () => _enquire(product),
               ),
             ),
             const SizedBox(height: 24),
@@ -315,9 +297,9 @@ class _Breadcrumb extends StatelessWidget {
           Text(
             'Premium Numbers',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6B7280),
-                  fontWeight: FontWeight.w600,
-                ),
+              color: const Color(0xFF6B7280),
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(width: 6),
           const Icon(Icons.chevron_right, size: 16, color: Color(0xFF9CA3AF)),
@@ -364,6 +346,7 @@ class _MainCard extends StatelessWidget {
     required this.canBuy,
     required this.onAddToCart,
     required this.onBuyNow,
+    required this.onEnquire,
   });
 
   final PhoneNumber product;
@@ -384,6 +367,12 @@ class _MainCard extends StatelessWidget {
   final bool canBuy;
   final VoidCallback onAddToCart;
   final VoidCallback onBuyNow;
+  final VoidCallback onEnquire;
+
+  /// Numbers over ₹5 lakh including GST aren't sold online — they're
+  /// enquiry-only, matching the rule the rest of the app (and the website)
+  /// applies. [total] is already the GST-inclusive figure.
+  bool get _isEnquiryOnly => total > ProductActions.enquiryThreshold;
 
   bool get _hasNumerology =>
       literSum != null || trapSum != null || scoreSum != null;
@@ -410,7 +399,10 @@ class _MainCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFE9D5),
                   borderRadius: BorderRadius.circular(20),
@@ -428,9 +420,19 @@ class _MainCard extends StatelessWidget {
                 onTap: onShare,
                 child: const Row(
                   children: [
-                    Icon(Icons.share_outlined, size: 18, color: Color(0xFF4B5563)),
+                    Icon(
+                      Icons.share_outlined,
+                      size: 18,
+                      color: Color(0xFF4B5563),
+                    ),
                     SizedBox(width: 4),
-                    Text('Share', style: TextStyle(color: Color(0xFF4B5563), fontWeight: FontWeight.w600)),
+                    Text(
+                      'Share',
+                      style: TextStyle(
+                        color: Color(0xFF4B5563),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -476,7 +478,11 @@ class _MainCard extends StatelessWidget {
                       SizedBox(width: 6),
                       Text(
                         'Verified Premium',
-                        style: TextStyle(color: _green, fontWeight: FontWeight.w700, fontSize: 13),
+                        style: TextStyle(
+                          color: _green,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -490,10 +496,15 @@ class _MainCard extends StatelessWidget {
                     foregroundColor: const Color(0xFF4B5563),
                     side: const BorderSide(color: Color(0xFFE5E7EB)),
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
                   icon: const Icon(Icons.copy_outlined, size: 16),
-                  label: const Text('Copy Number', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  label: const Text(
+                    'Copy Number',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
@@ -505,23 +516,50 @@ class _MainCard extends StatelessWidget {
                 Container(
                   width: 6,
                   height: 18,
-                  decoration: BoxDecoration(color: _orange, borderRadius: BorderRadius.circular(3)),
+                  decoration: BoxDecoration(
+                    color: _orange,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                const Text('Numerology Analytics', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                const Text(
+                  'Numerology Analytics',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 if (literSum != null)
-                  Expanded(child: _StatBox(label: 'LITERS SUM', value: literSum!, bg: _blueBg, color: _blue)),
+                  Expanded(
+                    child: _StatBox(
+                      label: 'LITERS SUM',
+                      value: literSum!,
+                      bg: _blueBg,
+                      color: _blue,
+                    ),
+                  ),
                 if (literSum != null) const SizedBox(width: 10),
                 if (trapSum != null)
-                  Expanded(child: _StatBox(label: 'TRAP SUM', value: trapSum!, bg: _amberBg, color: _amber)),
+                  Expanded(
+                    child: _StatBox(
+                      label: 'TRAP SUM',
+                      value: trapSum!,
+                      bg: _amberBg,
+                      color: _amber,
+                    ),
+                  ),
                 if (trapSum != null) const SizedBox(width: 10),
                 if (scoreSum != null)
-                  Expanded(child: _StatBox(label: 'SCORE', value: scoreSum!, bg: _purpleBg, color: _purple)),
+                  Expanded(
+                    child: _StatBox(
+                      label: 'SCORE',
+                      value: scoreSum!,
+                      bg: _purpleBg,
+                      color: _purple,
+                    ),
+                  ),
               ],
             ),
           ],
@@ -545,7 +583,10 @@ class _MainCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('Price Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                const Text(
+                  'Price Details',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                ),
                 const SizedBox(height: 14),
                 _PriceRow(
                   label: 'Price (Without GST)',
@@ -554,10 +595,20 @@ class _MainCard extends StatelessWidget {
                   valueBold: true,
                 ),
                 const Divider(height: 28),
-                _PriceRow(label: 'GST (18%)', value: '₹${_formatRupees(gst)}.00', valueBold: true),
+                _PriceRow(
+                  label: 'GST (18%)',
+                  value: '₹${_formatRupees(gst)}.00',
+                  valueBold: true,
+                ),
                 const SizedBox(height: 6),
-                _PriceSubRow(label: 'CGST (9%)', value: '₹${_formatRupees(cgst)}.00'),
-                _PriceSubRow(label: 'SGST (9%)', value: '₹${_formatRupees(cgst)}.00'),
+                _PriceSubRow(
+                  label: 'CGST (9%)',
+                  value: '₹${_formatRupees(cgst)}.00',
+                ),
+                _PriceSubRow(
+                  label: 'SGST (9%)',
+                  value: '₹${_formatRupees(cgst)}.00',
+                ),
                 const Divider(height: 28),
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -572,13 +623,29 @@ class _MainCard extends StatelessWidget {
                       const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Total Amount', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                          Text('(Including GST)', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+                          Text(
+                            'Total Amount',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            '(Including GST)',
+                            style: TextStyle(
+                              color: Color(0xFF9CA3AF),
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                       Text(
                         '₹${_formatRupees(total)}',
-                        style: const TextStyle(color: _orange, fontWeight: FontWeight.w900, fontSize: 22),
+                        style: const TextStyle(
+                          color: _orange,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22,
+                        ),
                       ),
                     ],
                   ),
@@ -593,26 +660,38 @@ class _MainCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: canBuy ? onAddToCart : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _orange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          if (!_isEnquiryOnly)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: canBuy ? onAddToCart : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: isAddingToCart
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
               ),
-              child: isAddingToCart
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Add to Cart', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
             ),
-          ),
-          const SizedBox(height: 10),
+          if (!_isEnquiryOnly) const SizedBox(height: 10),
           Row(
             children: [
               GestureDetector(
@@ -634,33 +713,90 @@ class _MainCard extends StatelessWidget {
               Expanded(
                 child: SizedBox(
                   height: 52,
-                  child: ElevatedButton(
-                    onPressed: canBuy ? onBuyNow : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _darkButton,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: isBuyingNow
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Buy Now', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                  ),
+                  child: _isEnquiryOnly
+                      ? ElevatedButton.icon(
+                          onPressed: onEnquire,
+                          icon: const Icon(Icons.phone, size: 16),
+                          label: const Text(
+                            'Enquire Now',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _darkButton,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        )
+                      : ElevatedButton(
+                          onPressed: canBuy ? onBuyNow : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _darkButton,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: isBuyingNow
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Buy Now',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                        ),
                 ),
               ),
             ],
           ),
+          if (_isEnquiryOnly) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Numbers above ₹5,00,000 are sold through our team — '
+              'send an enquiry and we\'ll get back to you.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+            ),
+          ],
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
           const Row(
             children: [
-              Expanded(child: _TrustItem(icon: Icons.lock_outline, label: 'Secure Payment', color: Color(0xFFCA8A04))),
-              Expanded(child: _TrustItem(icon: Icons.check, label: 'Verified Number', color: Colors.black87)),
-              Expanded(child: _TrustItem(icon: Icons.bolt, label: 'Easy Activation', color: Color(0xFFCA8A04))),
+              Expanded(
+                child: _TrustItem(
+                  icon: Icons.lock_outline,
+                  label: 'Secure Payment',
+                  color: Color(0xFFCA8A04),
+                ),
+              ),
+              Expanded(
+                child: _TrustItem(
+                  icon: Icons.check,
+                  label: 'Verified Number',
+                  color: Colors.black87,
+                ),
+              ),
+              Expanded(
+                child: _TrustItem(
+                  icon: Icons.bolt,
+                  label: 'Easy Activation',
+                  color: Color(0xFFCA8A04),
+                ),
+              ),
             ],
           ),
         ],
@@ -670,7 +806,12 @@ class _MainCard extends StatelessWidget {
 }
 
 class _StatBox extends StatelessWidget {
-  const _StatBox({required this.label, required this.value, required this.bg, required this.color});
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.bg,
+    required this.color,
+  });
 
   final String label;
   final int value;
@@ -681,12 +822,30 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
         children: [
-          Text(label, style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color.withValues(alpha: 0.8),
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text('$value', style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.w900)),
+          Text(
+            '$value',
+            style: TextStyle(
+              color: color,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );
@@ -702,19 +861,31 @@ class _GreenPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 9),
-      decoration: BoxDecoration(color: _greenBg, borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(
+        color: _greenBg,
+        borderRadius: BorderRadius.circular(30),
+      ),
       child: Text(
         text,
         textAlign: TextAlign.center,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: _green, fontWeight: FontWeight.w700, fontSize: 12),
+        style: const TextStyle(
+          color: _green,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
       ),
     );
   }
 }
 
 class _PriceRow extends StatelessWidget {
-  const _PriceRow({required this.label, this.caption, required this.value, this.valueBold = false});
+  const _PriceRow({
+    required this.label,
+    this.caption,
+    required this.value,
+    this.valueBold = false,
+  });
 
   final String label;
   final String? caption;
@@ -730,18 +901,33 @@ class _PriceRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
               if (caption != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(caption!, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11)),
+                  child: Text(
+                    caption!,
+                    style: const TextStyle(
+                      color: Color(0xFF9CA3AF),
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
             ],
           ),
         ),
         Text(
           value,
-          style: TextStyle(fontWeight: valueBold ? FontWeight.w800 : FontWeight.w600, fontSize: valueBold ? 16 : 14),
+          style: TextStyle(
+            fontWeight: valueBold ? FontWeight.w800 : FontWeight.w600,
+            fontSize: valueBold ? 16 : 14,
+          ),
         ),
       ],
     );
@@ -761,9 +947,15 @@ class _PriceSubRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text('•  $label', style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+            child: Text(
+              '•  $label',
+              style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
+            ),
           ),
-          Text(value, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+          Text(
+            value,
+            style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
+          ),
         ],
       ),
     );
@@ -771,7 +963,11 @@ class _PriceSubRow extends StatelessWidget {
 }
 
 class _TrustItem extends StatelessWidget {
-  const _TrustItem({required this.icon, required this.label, required this.color});
+  const _TrustItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   final IconData icon;
   final String label;
@@ -783,7 +979,11 @@ class _TrustItem extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 20),
         const SizedBox(height: 6),
-        Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        ),
       ],
     );
   }
@@ -807,29 +1007,65 @@ class _AboutSection extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(color: const Color(0xFFFFE9D5), borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE9D5),
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: const Text(
               'PREMIUM QUALITY',
-              style: TextStyle(color: _orange, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+              style: TextStyle(
+                color: _orange,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
           const SizedBox(height: 14),
-          Text('About ${product.number}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 26)),
+          Text(
+            'About ${product.number}',
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 26),
+          ),
           const SizedBox(height: 4),
-          Text(product.category, style: const TextStyle(color: _orange, fontWeight: FontWeight.w800, fontSize: 20)),
+          Text(
+            product.category,
+            style: const TextStyle(
+              color: _orange,
+              fontWeight: FontWeight.w800,
+              fontSize: 20,
+            ),
+          ),
           const SizedBox(height: 12),
           RichText(
             text: TextSpan(
-              style: const TextStyle(color: Color(0xFF374151), fontSize: 15, height: 1.5),
+              style: const TextStyle(
+                color: Color(0xFF374151),
+                fontSize: 15,
+                height: 1.5,
+              ),
               children: [
-                TextSpan(text: 'Looking for a premium $categoryLower mobile number? '),
-                TextSpan(text: product.number, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.black)),
+                TextSpan(
+                  text: 'Looking for a premium $categoryLower mobile number? ',
+                ),
+                TextSpan(
+                  text: product.number,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
                 const TextSpan(text: ' is a stylish and memorable '),
                 const TextSpan(
                   text: 'VIP number',
-                  style: TextStyle(color: _orange, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                  style: TextStyle(
+                    color: _orange,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
-                const TextSpan(text: ', perfect for personal branding and business use.'),
+                const TextSpan(
+                  text: ', perfect for personal branding and business use.',
+                ),
               ],
             ),
           ),
@@ -838,7 +1074,8 @@ class _AboutSection extends StatelessWidget {
             icon: Icons.star,
             iconBg: _orange,
             title: 'Why Choose ${product.number}?',
-            body: 'Premium numbers are easy to remember and help create a strong impression. '
+            body:
+                'Premium numbers are easy to remember and help create a strong impression. '
                 'The unique $categoryLower pattern makes this number stand out instantly.',
           ),
           const SizedBox(height: 16),
@@ -847,15 +1084,40 @@ class _AboutSection extends StatelessWidget {
             iconBg: _purple,
             title: 'Numerology Significance',
             richBody: TextSpan(
-              style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14, height: 1.5),
+              style: const TextStyle(
+                color: Color(0xFF4B5563),
+                fontSize: 14,
+                height: 1.5,
+              ),
               children: [
                 const TextSpan(text: 'This number has a liters sum of '),
-                TextSpan(text: '${product.numerology?['liters'] ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.black)),
+                TextSpan(
+                  text: '${product.numerology?['liters'] ?? '-'}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
                 const TextSpan(text: ' and a trap sum of '),
-                TextSpan(text: '${product.numerology?['trap'] ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.black)),
+                TextSpan(
+                  text: '${product.numerology?['trap'] ?? '-'}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
                 const TextSpan(text: ' and a numerology score of '),
-                TextSpan(text: '${product.numerology?['score'] ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.black)),
-                const TextSpan(text: ', often associated with positivity, balance, and good fortune.'),
+                TextSpan(
+                  text: '${product.numerology?['score'] ?? '-'}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
+                const TextSpan(
+                  text:
+                      ', often associated with positivity, balance, and good fortune.',
+                ),
               ],
             ),
           ),
@@ -865,12 +1127,23 @@ class _AboutSection extends StatelessWidget {
             iconBg: const Color(0xFF10B981),
             title: 'Easy Purchase Process',
             richBody: TextSpan(
-              style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14, height: 1.5),
+              style: const TextStyle(
+                color: Color(0xFF4B5563),
+                fontSize: 14,
+                height: 1.5,
+              ),
               children: [
                 const TextSpan(text: 'Buying '),
-                TextSpan(text: product.number, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.black)),
+                TextSpan(
+                  text: product.number,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                  ),
+                ),
                 const TextSpan(
-                  text: ' is quick and secure. Add the number to your cart, complete the payment, '
+                  text:
+                      ' is quick and secure. Add the number to your cart, complete the payment, '
                       'and get activation support from our team anytime.',
                 ),
               ],
@@ -902,23 +1175,39 @@ class _InfoCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 48,
             height: 48,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Icon(icon, color: Colors.white, size: 24),
           ),
           const SizedBox(height: 14),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+          ),
           const SizedBox(height: 8),
           if (richBody != null)
             RichText(text: richBody!)
           else
-            Text(body ?? '', style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14, height: 1.5)),
+            Text(
+              body ?? '',
+              style: const TextStyle(
+                color: Color(0xFF4B5563),
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
         ],
       ),
     );
@@ -930,7 +1219,11 @@ class _InfoCard extends StatelessWidget {
 /// same as the live site falls back to when that call fails — this
 /// renders the empty/error state rather than fabricating data.
 class _RelatedNumbersSection extends StatelessWidget {
-  const _RelatedNumbersSection({required this.title, required this.subtitle, this.trailing});
+  const _RelatedNumbersSection({
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
 
   final String title;
   final String subtitle;
@@ -949,12 +1242,21 @@ class _RelatedNumbersSection extends StatelessWidget {
             children: [
               const Text('✨ ', style: TextStyle(fontSize: 18)),
               Expanded(
-                child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 19)),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 19,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
+          Text(
+            subtitle,
+            style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+          ),
           const SizedBox(height: 20),
           Container(
             width: double.infinity,
@@ -968,17 +1270,20 @@ class _RelatedNumbersSection extends StatelessWidget {
               children: [
                 Text(
                   'Unable to load similar numbers',
-                  style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Color(0xFFDC2626),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 SizedBox(height: 4),
-                Text('Please try again', style: TextStyle(color: Color(0xFFDC2626), fontSize: 13)),
+                Text(
+                  'Please try again',
+                  style: TextStyle(color: Color(0xFFDC2626), fontSize: 13),
+                ),
               ],
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(height: 16),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(height: 16), trailing!],
         ],
       ),
     );
@@ -998,14 +1303,27 @@ class _ViewAllCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(color: _orange, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          color: _orange,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: const Column(
           children: [
             Icon(Icons.auto_awesome, color: Colors.white),
             SizedBox(height: 8),
-            Text('View All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(
+              'View All',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
+            ),
             SizedBox(height: 2),
-            Text('Browse complete collection', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              'Browse complete collection',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
             SizedBox(height: 8),
             Icon(Icons.arrow_forward, color: Colors.white, size: 18),
           ],
@@ -1027,16 +1345,29 @@ class _WhyChooseCategoryCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           RichText(
             text: TextSpan(
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, height: 1.15),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                height: 1.15,
+              ),
               children: [
-                const TextSpan(text: 'Why Choose ', style: TextStyle(color: _orange)),
-                TextSpan(text: '$category?', style: const TextStyle(color: Colors.black)),
+                const TextSpan(
+                  text: 'Why Choose ',
+                  style: TextStyle(color: _orange),
+                ),
+                TextSpan(
+                  text: '$category?',
+                  style: const TextStyle(color: Colors.black),
+                ),
               ],
             ),
           ),
@@ -1045,14 +1376,22 @@ class _WhyChooseCategoryCard extends StatelessWidget {
             '$category mobile numbers are known for their unique patterns, premium appeal, and '
             'easy memorability. These VIP numbers are ideal for businesses, professionals, and '
             'individuals looking to create a strong and lasting impression.',
-            style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14, height: 1.5),
+            style: const TextStyle(
+              color: Color(0xFF4B5563),
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
             'Explore our collection of $categoryLower numbers with competitive pricing, verified '
             'ownership, and quick activation support. Find a premium number that perfectly matches '
             'your personality or brand identity.',
-            style: const TextStyle(color: Color(0xFF4B5563), fontSize: 14, height: 1.5),
+            style: const TextStyle(
+              color: Color(0xFF4B5563),
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 20),
           const Divider(),
@@ -1061,7 +1400,11 @@ class _WhyChooseCategoryCard extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: const [
-              _CheckPill(text: 'Easy Activation', bg: Color(0xFFFFE9D5), color: _orange),
+              _CheckPill(
+                text: 'Easy Activation',
+                bg: Color(0xFFFFE9D5),
+                color: _orange,
+              ),
               _CheckPill(text: 'Ready to Port', bg: _blueBg, color: _blue),
               _CheckPill(text: 'Verified Numbers', bg: _greenBg, color: _green),
               _CheckPill(text: '24/7 Support', bg: _purpleBg, color: _purple),
@@ -1084,18 +1427,31 @@ class _CheckPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(30),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 18,
             height: 18,
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
             child: Icon(Icons.check, size: 12, color: color),
           ),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 13)),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -1118,25 +1474,25 @@ class _FaqSection extends StatelessWidget {
   final ValueChanged<int> onToggle;
 
   List<String> get _answers => [
-        'The price of ${product.number} is ₹${_formatRupees(total)} '
-            '(including 18% GST). This includes activation and porting support.',
-        product.isRTP
-            ? 'Yes, this number is Ready to Port (RTP) and can be ported to your '
-                'preferred operator immediately after purchase.'
-            : product.isCRTP
-                ? 'This number is Conditionally Ready to Port. A brief verification '
-                    'is required before the porting process can begin.'
-                : 'This number requires verification before it can be ported. '
-                    'Our team will guide you through the process after purchase.',
-        'After completing payment, you\'ll receive a Unique Porting Code (UPC) '
-            'via SMS, WhatsApp, and email within 24 hours. Visit your preferred '
-            'operator\'s store with ID proof to complete activation.',
-        'Yes, absolutely. This number is perfect for business branding, '
-            'marketing campaigns, and professional use across all major operators.',
-        'In the rare case a number becomes unavailable after payment, you\'ll '
-            'receive a full refund or the option to choose an alternative number '
-            'of equal value.',
-      ];
+    'The price of ${product.number} is ₹${_formatRupees(total)} '
+        '(including 18% GST). This includes activation and porting support.',
+    product.isRTP
+        ? 'Yes, this number is Ready to Port (RTP) and can be ported to your '
+              'preferred operator immediately after purchase.'
+        : product.isCRTP
+        ? 'This number is Conditionally Ready to Port. A brief verification '
+              'is required before the porting process can begin.'
+        : 'This number requires verification before it can be ported. '
+              'Our team will guide you through the process after purchase.',
+    'After completing payment, you\'ll receive a Unique Porting Code (UPC) '
+        'via SMS, WhatsApp, and email within 24 hours. Visit your preferred '
+        'operator\'s store with ID proof to complete activation.',
+    'Yes, absolutely. This number is perfect for business branding, '
+        'marketing campaigns, and professional use across all major operators.',
+    'In the rare case a number becomes unavailable after payment, you\'ll '
+        'receive a full refund or the option to choose an alternative number '
+        'of equal value.',
+  ];
 
   static const _questions = [
     'What is the price of {number}?',
@@ -1156,10 +1512,17 @@ class _FaqSection extends StatelessWidget {
           RichText(
             textAlign: TextAlign.center,
             text: const TextSpan(
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.black),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+              ),
               children: [
                 TextSpan(text: 'Frequently Asked '),
-                TextSpan(text: 'Questions', style: TextStyle(color: _orange)),
+                TextSpan(
+                  text: 'Questions',
+                  style: TextStyle(color: _orange),
+                ),
               ],
             ),
           ),
@@ -1169,7 +1532,9 @@ class _FaqSection extends StatelessWidget {
               width: 48,
               height: 3,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_orange, Color(0xFFFFC078)]),
+                gradient: const LinearGradient(
+                  colors: [_orange, Color(0xFFFFC078)],
+                ),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1220,20 +1585,40 @@ class _FaqCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(question, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    child: Text(
+                      question,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Container(
                     width: 28,
                     height: 28,
-                    decoration: const BoxDecoration(color: Color(0xFFF3F4F6), shape: BoxShape.circle),
-                    child: Icon(expanded ? Icons.remove : Icons.add, size: 16, color: Colors.black87),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF3F4F6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      expanded ? Icons.remove : Icons.add,
+                      size: 16,
+                      color: Colors.black87,
+                    ),
                   ),
                 ],
               ),
               if (expanded) ...[
                 const SizedBox(height: 12),
-                Text(answer, style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13, height: 1.5)),
+                Text(
+                  answer,
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
               ],
             ],
           ),
@@ -1288,12 +1673,25 @@ class _ExplorePatternsSection extends StatelessWidget {
                         Container(
                           width: 36,
                           height: 36,
-                          decoration: BoxDecoration(color: const Color(0xFFFFE9D5), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(Icons.chevron_right, color: _orange, size: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE9D5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.chevron_right,
+                            color: _orange,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
-                          child: Text(pattern, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                          child: Text(
+                            pattern,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -1350,7 +1748,11 @@ class _NetworksSection extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     network.name,
-                    style: TextStyle(color: network.color, fontWeight: FontWeight.w900, fontSize: 20),
+                    style: TextStyle(
+                      color: network.color,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                    ),
                   ),
                 ),
             ],
@@ -1367,7 +1769,16 @@ class _CitiesSection extends StatelessWidget {
   final String category;
   final VoidCallback onTap;
 
-  static const _cities = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad'];
+  static const _cities = [
+    'Mumbai',
+    'Delhi',
+    'Bangalore',
+    'Hyderabad',
+    'Chennai',
+    'Kolkata',
+    'Pune',
+    'Ahmedabad',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -1394,14 +1805,31 @@ class _CitiesSection extends StatelessWidget {
                   onTap: onTap,
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(color: const Color(0xFFFFF3E8), borderRadius: BorderRadius.circular(30)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E8),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(city, style: const TextStyle(color: _orange, fontWeight: FontWeight.w800, fontSize: 13)),
+                        Text(
+                          city,
+                          style: const TextStyle(
+                            color: _orange,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.chevron_right, color: _orange, size: 16),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: _orange,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1415,9 +1843,14 @@ class _CitiesSection extends StatelessWidget {
               foregroundColor: _orange,
               side: const BorderSide(color: _orange),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
-            child: const Text('View All Locations  →', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text(
+              'View All Locations  →',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(height: 12),
           ElevatedButton(
@@ -1426,9 +1859,14 @@ class _CitiesSection extends StatelessWidget {
               backgroundColor: _orange,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
-            child: Text('View More $category Numbers  →', style: const TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(
+              'View More $category Numbers  →',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),

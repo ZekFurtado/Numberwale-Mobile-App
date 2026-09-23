@@ -86,6 +86,9 @@ class _CartView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<CartBloc, CartState>(
       listener: (context, state) {
+        // CartBloc re-reads the cart itself after a remove/clear, and errors
+        // are reported app-wide from main.dart — all that's left here is the
+        // confirmation copy.
         if (state is ItemRemovedFromCart) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -93,18 +96,9 @@ class _CartView extends StatelessWidget {
               duration: Duration(seconds: 2),
             ),
           );
-          context.read<CartBloc>().add(const LoadCartEvent());
         } else if (state is CartCleared) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Cart cleared')),
-          );
-          context.read<CartBloc>().add(const LoadCartEvent());
-        } else if (state is CartError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
           );
         }
       },

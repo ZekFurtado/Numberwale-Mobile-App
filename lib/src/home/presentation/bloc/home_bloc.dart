@@ -22,13 +22,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required GetCategories getCategories,
     required GetDiscountedNumbers getDiscountedNumbers,
     required GetProducts getNewlyAddedProducts,
+    required GetProducts getPremiumProducts,
     required GetDealOfTheDay getDealOfTheDay,
-  })  : _getBanners = getBanners,
-        _getCategories = getCategories,
-        _getDiscountedNumbers = getDiscountedNumbers,
-        _getNewlyAddedProducts = getNewlyAddedProducts,
-        _getDealOfTheDay = getDealOfTheDay,
-        super(const HomeInitial()) {
+  }) : _getBanners = getBanners,
+       _getCategories = getCategories,
+       _getDiscountedNumbers = getDiscountedNumbers,
+       _getNewlyAddedProducts = getNewlyAddedProducts,
+       _getPremiumProducts = getPremiumProducts,
+       _getDealOfTheDay = getDealOfTheDay,
+       super(const HomeInitial()) {
     on<LoadHomeDataEvent>(_loadHomeDataHandler);
     on<RefreshHomeDataEvent>(_refreshHomeDataHandler);
   }
@@ -37,6 +39,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetCategories _getCategories;
   final GetDiscountedNumbers _getDiscountedNumbers;
   final GetProducts _getNewlyAddedProducts;
+  final GetProducts _getPremiumProducts;
   final GetDealOfTheDay _getDealOfTheDay;
 
   /// Matches the "Newly Added VIP Numbers" API spec exactly: last 7 days,
@@ -46,6 +49,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       recentDays: 7,
       sort: '-createdAt',
       limit: 12,
+      skipCount: true,
+    ),
+  );
+
+  /// "Premium Numbers": the same `get-products` listing endpoint, sorted by
+  /// price (highest first) to surface the top-value numbers across all
+  /// categories.
+  static const _premiumParams = GetProductsParams(
+    filters: ProductFilters(
+      sortPrice: 'highToLow',
+      limit: 10,
       skipCount: true,
     ),
   );
@@ -62,6 +76,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       _getDiscountedNumbers(const GetDiscountedNumbersParams(limit: 10)),
       _getNewlyAddedProducts(_newlyAddedParams),
       _getDealOfTheDay(),
+      _getPremiumProducts(_premiumParams),
     ]);
 
     final bannersResult = results[0];
@@ -69,6 +84,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final discountedResult = results[2];
     final newlyAddedResult = results[3];
     final dealOfTheDayResult = results[4];
+    final premiumResult = results[5];
 
     if (categoriesResult.isLeft()) {
       final failure = categoriesResult.fold((l) => l, (r) => null);
@@ -77,17 +93,34 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       return;
     }
 
-    emit(HomeDataLoaded(
-      banners: bannersResult.fold((l) => <Banner>[], (r) => r as List<Banner>),
-      categories: categoriesResult.fold(
-          (l) => <Category>[], (r) => r as List<Category>),
-      discountedNumbers: discountedResult.fold(
-          (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>),
-      newlyAddedNumbers: newlyAddedResult.fold(
-          (l) => <PhoneNumber>[], (r) => (r as ProductResult).products),
-      dealOfTheDayNumbers: dealOfTheDayResult.fold(
-          (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>),
-    ));
+    emit(
+      HomeDataLoaded(
+        banners: bannersResult.fold(
+          (l) => <Banner>[],
+          (r) => r as List<Banner>,
+        ),
+        categories: categoriesResult.fold(
+          (l) => <Category>[],
+          (r) => r as List<Category>,
+        ),
+        discountedNumbers: discountedResult.fold(
+          (l) => <PhoneNumber>[],
+          (r) => r as List<PhoneNumber>,
+        ),
+        newlyAddedNumbers: newlyAddedResult.fold(
+          (l) => <PhoneNumber>[],
+          (r) => (r as ProductResult).products,
+        ),
+        dealOfTheDayNumbers: dealOfTheDayResult.fold(
+          (l) => <PhoneNumber>[],
+          (r) => r as List<PhoneNumber>,
+        ),
+        premiumNumbers: premiumResult.fold(
+          (l) => <PhoneNumber>[],
+          (r) => (r as ProductResult).products,
+        ),
+      ),
+    );
   }
 
   Future<void> _refreshHomeDataHandler(
@@ -102,6 +135,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       _getDiscountedNumbers(const GetDiscountedNumbersParams(limit: 10)),
       _getNewlyAddedProducts(_newlyAddedParams),
       _getDealOfTheDay(),
+      _getPremiumProducts(_premiumParams),
     ]);
 
     final bannersResult = results[0];
@@ -109,24 +143,42 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final discountedResult = results[2];
     final newlyAddedResult = results[3];
     final dealOfTheDayResult = results[4];
+    final premiumResult = results[5];
 
-    final banners =
-        bannersResult.fold((l) => <Banner>[], (r) => r as List<Banner>);
-    final categories =
-        categoriesResult.fold((l) => <Category>[], (r) => r as List<Category>);
+    final banners = bannersResult.fold(
+      (l) => <Banner>[],
+      (r) => r as List<Banner>,
+    );
+    final categories = categoriesResult.fold(
+      (l) => <Category>[],
+      (r) => r as List<Category>,
+    );
     final discountedNumbers = discountedResult.fold(
-        (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>);
+      (l) => <PhoneNumber>[],
+      (r) => r as List<PhoneNumber>,
+    );
     final newlyAddedNumbers = newlyAddedResult.fold(
-        (l) => <PhoneNumber>[], (r) => (r as ProductResult).products);
+      (l) => <PhoneNumber>[],
+      (r) => (r as ProductResult).products,
+    );
     final dealOfTheDayNumbers = dealOfTheDayResult.fold(
-        (l) => <PhoneNumber>[], (r) => r as List<PhoneNumber>);
+      (l) => <PhoneNumber>[],
+      (r) => r as List<PhoneNumber>,
+    );
+    final premiumNumbers = premiumResult.fold(
+      (l) => <PhoneNumber>[],
+      (r) => (r as ProductResult).products,
+    );
 
-    emit(HomeDataLoaded(
-      banners: banners,
-      categories: categories,
-      discountedNumbers: discountedNumbers,
-      newlyAddedNumbers: newlyAddedNumbers,
-      dealOfTheDayNumbers: dealOfTheDayNumbers,
-    ));
+    emit(
+      HomeDataLoaded(
+        banners: banners,
+        categories: categories,
+        discountedNumbers: discountedNumbers,
+        newlyAddedNumbers: newlyAddedNumbers,
+        dealOfTheDayNumbers: dealOfTheDayNumbers,
+        premiumNumbers: premiumNumbers,
+      ),
+    );
   }
 }

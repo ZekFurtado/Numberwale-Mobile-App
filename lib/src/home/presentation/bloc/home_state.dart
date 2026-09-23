@@ -30,6 +30,7 @@ class HomeDataLoaded extends HomeState {
     required this.discountedNumbers,
     required this.newlyAddedNumbers,
     required this.dealOfTheDayNumbers,
+    required this.premiumNumbers,
   });
 
   final List<Banner> banners;
@@ -37,6 +38,7 @@ class HomeDataLoaded extends HomeState {
   final List<PhoneNumber> discountedNumbers;
   final List<PhoneNumber> newlyAddedNumbers;
   final List<PhoneNumber> dealOfTheDayNumbers;
+  final List<PhoneNumber> premiumNumbers;
 
   @override
   List<Object> get props => [
@@ -45,6 +47,7 @@ class HomeDataLoaded extends HomeState {
         discountedNumbers,
         newlyAddedNumbers,
         dealOfTheDayNumbers,
+        premiumNumbers,
       ];
 }
 

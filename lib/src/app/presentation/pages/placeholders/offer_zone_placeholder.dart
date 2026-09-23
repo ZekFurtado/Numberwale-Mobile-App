@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
+import 'package:numberwale/core/utils/product_actions.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
 import 'package:numberwale/core/widgets/vip_number_card.dart';
-import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
@@ -164,31 +164,32 @@ class _OfferZoneContentState extends State<_OfferZoneContent> {
                 itemBuilder: (context, index) {
                   final pn = products[index];
                   final hasDiscount = pn.discount > 0 && pn.originalPrice != null;
-                  return VipNumberCard(
-                    phoneNumber: pn.number,
-                    price: pn.price,
-                    category: pn.category,
-                    numerology: pn.numerology,
-                    originalPrice: pn.originalPrice,
-                    discount: hasDiscount ? pn.discount : null,
-                    dealEndsAt:
-                        hasDiscount ? _dealEndsAtFor(pn.id ?? pn.number) : null,
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      Routes.productDetail,
-                      arguments: pn.number,
+                  // Wrapped in WishlistAware: itemBuilder's `context` is the
+                  // shared sliver context, unsafe for context.select.
+                  return WishlistAware(
+                    itemId: pn.id,
+                    builder: (context, isWishlisted) => VipNumberCard(
+                      phoneNumber: pn.number,
+                      price: pn.price,
+                      category: pn.category,
+                      numerology: pn.numerology,
+                      originalPrice: pn.originalPrice,
+                      discount: hasDiscount ? pn.discount : null,
+                      dealEndsAt: hasDiscount
+                          ? _dealEndsAtFor(pn.id ?? pn.number)
+                          : null,
+                      isWishlisted: isWishlisted,
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        Routes.productDetail,
+                        arguments: pn.number,
+                      ),
+                      onAddToCart: () => ProductActions.addToCart(context, pn),
+                      onBuyNow: () => ProductActions.buyNow(context, pn),
+                      onEnquire: () => ProductActions.enquire(context, pn),
+                      onWishlist: () =>
+                          ProductActions.toggleWishlist(context, pn),
                     ),
-                    onAddToCart: () {
-                      if (pn.id != null) {
-                        context.read<CartBloc>().add(
-                              AddToCartEvent(productId: pn.id!),
-                            );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('${pn.number} added to cart')),
-                        );
-                      }
-                    },
                   );
                 },
               ),

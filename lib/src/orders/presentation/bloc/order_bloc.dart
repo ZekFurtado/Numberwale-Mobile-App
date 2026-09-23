@@ -35,7 +35,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       },
       (ordersResult) => emit(
         OrdersLoaded(
-          orders: ordersResult.orders,
+          orders: _onlyPurchases(ordersResult.orders),
           totalSpent: ordersResult.totalSpent,
           hasNextPage: ordersResult.hasNextPage,
           currentPage: ordersResult.currentPage,
@@ -43,6 +43,21 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         ),
       ),
     );
+  }
+
+  /// Drops orders whose payment never completed.
+  ///
+  /// The backend creates an order as soon as checkout starts, so abandoning
+  /// or failing a payment leaves an unpaid shell behind — which is why a
+  /// brand new account that has bought nothing can still come back with rows
+  /// here. Only actual purchases belong in "My Orders".
+  List<Order> _onlyPurchases(List<Order> orders) {
+    final purchases = orders.where((order) => order.isPaid).toList();
+    final dropped = orders.length - purchases.length;
+    if (dropped > 0) {
+      log('OrderBloc: hiding $dropped unpaid order(s) from abandoned checkouts');
+    }
+    return purchases;
   }
 
   Future<void> _loadMoreOrdersHandler(
@@ -67,7 +82,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       },
       (ordersResult) => emit(
         currentState.copyWithAdditionalOrders(
-          newOrders: ordersResult.orders,
+          newOrders: _onlyPurchases(ordersResult.orders),
           totalSpent: ordersResult.totalSpent,
           hasNextPage: ordersResult.hasNextPage,
           currentPage: ordersResult.currentPage,

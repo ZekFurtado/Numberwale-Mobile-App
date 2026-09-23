@@ -23,7 +23,6 @@ class ProductListItem extends StatelessWidget {
     this.onAddToCart,
     this.onWishlist,
     this.onSimilar,
-
   });
 
   final String phoneNumber;
@@ -57,10 +56,7 @@ class ProductListItem extends StatelessWidget {
 
   int _digitalRoot(int n) {
     while (n >= 10) {
-      n = n
-          .toString()
-          .split('')
-          .fold(0, (sum, d) => sum + int.parse(d));
+      n = n.toString().split('').fold(0, (sum, d) => sum + int.parse(d));
     }
     return n;
   }
@@ -86,7 +82,6 @@ class ProductListItem extends StatelessWidget {
     return number;
   }
 
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -102,8 +97,6 @@ class ProductListItem extends StatelessWidget {
     final trap = numerology?['trap'] as int?;
     final hasNumerology = sum != null || score != null;
     final displayPrice = hasDiscount ? price * (1 - discount! / 100) : price;
-    final effectiveIsEnquiry = isEnquiry || (price * 1.18 > 500000);
-
 
     return Container(
       decoration: BoxDecoration(
@@ -152,7 +145,9 @@ class ProductListItem extends StatelessWidget {
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 2),
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: _orange),
                       borderRadius: BorderRadius.circular(20),
@@ -170,16 +165,14 @@ class ProductListItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(
-                  Icons.verified,
-                  size: 14,
-                  color: Color(0xFF1976D2),
-                ),
+                const Icon(Icons.verified, size: 14, color: Color(0xFF1976D2)),
                 if (isPremium) ...[
                   const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF8B5CF6),
                       borderRadius: BorderRadius.circular(20),
@@ -212,15 +205,24 @@ class ProductListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (sum != null) ...[
-                    Flexible(flex: 2,child: _StatBadge(label: 'SUM', value: '$sum')),
+                    Flexible(
+                      flex: 2,
+                      child: _StatBadge(label: 'SUM', value: '$sum'),
+                    ),
                     const SizedBox(width: 4),
                   ],
                   if (trap != null) ...[
-                    Flexible(flex: 2,child: _StatBadge(label: 'TRAP', value: '$trap')),
+                    Flexible(
+                      flex: 2,
+                      child: _StatBadge(label: 'TRAP', value: '$trap'),
+                    ),
                     const SizedBox(width: 4),
                   ],
                   if (score != null) ...[
-                    Flexible(flex: 2,child: _StatBadge(label: 'SCORE', value: '$score')),
+                    Flexible(
+                      flex: 2,
+                      child: _StatBadge(label: 'SCORE', value: '$score'),
+                    ),
                     const SizedBox(width: 4),
                   ],
                   Expanded(
@@ -242,10 +244,10 @@ class ProductListItem extends StatelessWidget {
                         child: const Text(
                           'SIMILAR',
                           style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                              color: _orange
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            color: _orange,
                           ),
                         ),
                       ),

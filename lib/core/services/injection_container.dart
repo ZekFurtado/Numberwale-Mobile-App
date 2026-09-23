@@ -85,6 +85,7 @@ import '../../src/numerology/data/datasources/numerology_remote_data_source.dart
 import '../../src/numerology/data/repositories/numerology_repository_impl.dart';
 import '../../src/numerology/domain/repositories/numerology_repository.dart';
 import '../../src/numerology/domain/usecases/submit_numerology_consultation.dart';
+import '../../src/numerology/domain/usecases/verify_numerology_payment.dart';
 import '../../src/numerology/presentation/bloc/numerology_bloc.dart';
 import '../../src/custom_request/data/datasources/custom_request_remote_data_source.dart';
 import '../../src/custom_request/data/repositories/custom_request_repository_impl.dart';
@@ -98,6 +99,13 @@ import '../../src/contact/domain/repositories/contact_repository.dart';
 import '../../src/contact/domain/usecases/submit_contact.dart';
 import '../../src/contact/domain/usecases/submit_career_application.dart';
 import '../../src/contact/presentation/bloc/contact_bloc.dart';
+import '../../src/wishlist/data/datasources/wishlist_remote_data_source.dart';
+import '../../src/wishlist/data/repositories/wishlist_repository_impl.dart';
+import '../../src/wishlist/domain/repositories/wishlist_repository.dart';
+import '../../src/wishlist/domain/usecases/add_to_wishlist.dart';
+import '../../src/wishlist/domain/usecases/get_wishlist.dart';
+import '../../src/wishlist/domain/usecases/remove_from_wishlist.dart';
+import '../../src/wishlist/presentation/bloc/wishlist_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -140,6 +148,7 @@ Future<void> init() async {
         getCategories: sl(),
         getDiscountedNumbers: sl(),
         getNewlyAddedProducts: sl(),
+        getPremiumProducts: sl(),
         getDealOfTheDay: sl(),
     ))
 
@@ -182,6 +191,7 @@ Future<void> init() async {
     /// Numerology
     ..registerFactory(() => NumerologyBloc(
         submitNumerologyConsultation: sl(),
+        verifyNumerologyPayment: sl(),
     ))
 
     /// Custom Number Request
@@ -194,6 +204,13 @@ Future<void> init() async {
     ..registerFactory(() => ContactBloc(
         submitContact: sl(),
         submitCareerApplication: sl(),
+    ))
+
+    /// Wishlist — one app-wide instance so every heart icon agrees.
+    ..registerLazySingleton(() => WishlistBloc(
+        getWishlist: sl(),
+        addToWishlist: sl(),
+        removeFromWishlist: sl(),
     ))
 
     /// USE CASES
@@ -255,6 +272,7 @@ Future<void> init() async {
 
     /// Numerology
     ..registerLazySingleton(() => SubmitNumerologyConsultation(sl()))
+    ..registerLazySingleton(() => VerifyNumerologyPayment(sl()))
 
     /// Custom Number Request
     ..registerLazySingleton(() => SubmitCustomRequest(sl()))
@@ -263,6 +281,11 @@ Future<void> init() async {
     /// Contact
     ..registerLazySingleton(() => SubmitContact(sl()))
     ..registerLazySingleton(() => SubmitCareerApplication(sl()))
+
+    /// Wishlist
+    ..registerLazySingleton(() => GetWishlist(sl()))
+    ..registerLazySingleton(() => AddToWishlist(sl()))
+    ..registerLazySingleton(() => RemoveFromWishlist(sl()))
 
 
     /// REPOSITORIES
@@ -313,6 +336,10 @@ Future<void> init() async {
     /// Contact
     ..registerLazySingleton<ContactRepository>(
         () => ContactRepositoryImpl(sl()))
+
+    /// Wishlist
+    ..registerLazySingleton<WishlistRepository>(
+        () => WishlistRepositoryImpl(sl()))
 
 
     /// DATA SOURCES
@@ -370,6 +397,10 @@ Future<void> init() async {
     /// Contact
     ..registerLazySingleton<ContactRemoteDataSource>(
         () => ContactRemoteDataSourceImpl(sl<AuthenticatedClient>()))
+
+    /// Wishlist
+    ..registerLazySingleton<WishlistRemoteDataSource>(
+        () => WishlistRemoteDataSourceImpl(sl<AuthenticatedClient>()))
 
     /// Call Support
 

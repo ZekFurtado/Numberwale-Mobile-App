@@ -15,7 +15,7 @@ class AppBottomNavigation extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: onTap,
-      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
@@ -31,6 +31,11 @@ class AppBottomNavigation extends StatelessWidget {
           icon: Icon(Icons.local_offer_outlined),
           selectedIcon: Icon(Icons.local_offer),
           label: 'Offers',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.auto_awesome_outlined),
+          selectedIcon: Icon(Icons.auto_awesome),
+          label: 'Numerology',
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),

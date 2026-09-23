@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:numberwale/core/utils/product_actions.dart';
 
 const _orange = Color(0xFFFF8401);
 const _cardBg = Color(0xFFFFFFFF);
@@ -21,6 +22,8 @@ class ProductCard extends StatelessWidget {
     this.numerology,
     this.onTap,
     this.onAddToCart,
+    this.onBuyNow,
+    this.onEnquire,
     this.onWishlist,
     this.onSimilar,
   });
@@ -37,6 +40,14 @@ class ProductCard extends StatelessWidget {
   final Map<String, dynamic>? numerology;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
+
+  /// Adds the number to the cart and continues to checkout. Falls back to
+  /// [onTap] when not supplied.
+  final VoidCallback? onBuyNow;
+
+  /// Opens the enquiry form, used instead of [onBuyNow] above the
+  /// online-purchase price limit. Falls back to [onTap].
+  final VoidCallback? onEnquire;
   final VoidCallback? onWishlist;
   final VoidCallback? onSimilar;
 
@@ -59,7 +70,8 @@ class ProductCard extends StatelessWidget {
     final hasNumerology = sum != null || score != null;
     final hasDiscount = discount != null && discount! > 0;
     final displayPrice = hasDiscount ? price * (1 - discount! / 100) : price;
-    final effectiveIsEnquiry = isEnquiry || (price * 1.18 > 500000);
+    final effectiveIsEnquiry =
+        isEnquiry || ProductActions.isEnquiryOnly(price);
 
     return GestureDetector(
       onTap: onTap,
@@ -268,7 +280,7 @@ class ProductCard extends StatelessWidget {
                       height: 34,
                       child: effectiveIsEnquiry
                           ? ElevatedButton.icon(
-                              onPressed: onTap,
+                              onPressed: onEnquire ?? onTap,
                               icon: const Icon(Icons.phone, size: 14),
                               label: const Text(
                                 'Enquire Now',
@@ -291,7 +303,7 @@ class ProductCard extends StatelessWidget {
                               ),
                             )
                           : OutlinedButton(
-                              onPressed: onTap,
+                              onPressed: onBuyNow ?? onTap,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: _orange,
                                 backgroundColor: Color(0xfffff7ed),

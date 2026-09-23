@@ -12,12 +12,17 @@ class LoadCartEvent extends CartEvent {
 }
 
 class AddToCartEvent extends CartEvent {
-  const AddToCartEvent({required this.productId});
+  const AddToCartEvent({required this.productId, this.buyNow = false});
 
   final String productId;
 
+  /// True when the customer tapped "Buy Now" rather than the cart icon — the
+  /// item is added the same way, but the app then takes them to the cart to
+  /// check out instead of just confirming with a snackbar.
+  final bool buyNow;
+
   @override
-  List<Object> get props => [productId];
+  List<Object> get props => [productId, buyNow];
 }
 
 class RemoveCartItemEvent extends CartEvent {

@@ -56,7 +56,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         return CartModel.fromMap(data);
       } else {
         throw ServerException(
-          message: 'Failed to fetch cart',
+          message: _errorMessage(response.body, 'Failed to fetch cart'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -83,7 +83,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         return data['product'] as DataMap? ?? data;
       } else {
         throw ServerException(
-          message: 'Failed to add item to cart',
+          message: _errorMessage(response.body, 'Failed to add item to cart'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -107,16 +107,8 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       log('removeCartItem status=${response.statusCode} body=${response.body}');
 
       if (response.statusCode != 200 && response.statusCode != 204) {
-        String message = 'Failed to remove cart item';
-        try {
-          final errorData = jsonDecode(response.body) as DataMap;
-          message = errorData['message'] as String? ?? message;
-        } catch (_) {
-          // Response body wasn't JSON (or didn't have `message`) — fall
-          // back to the generic message above.
-        }
         throw ServerException(
-          message: message,
+          message: _errorMessage(response.body, 'Failed to remove cart item'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -139,7 +131,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw ServerException(
-          message: 'Failed to clear cart',
+          message: _errorMessage(response.body, 'Failed to clear cart'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -166,7 +158,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         return CartValidationResultModel.fromMap(data);
       } else {
         throw ServerException(
-          message: 'Failed to validate cart',
+          message: _errorMessage(response.body, 'Failed to validate cart'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -191,11 +183,11 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       if (response.statusCode == 200) {
         final DataMap responseBody = jsonDecode(response.body) as DataMap;
         final data = responseBody['data'] as DataMap? ?? responseBody;
-        print(responseBody);
+        log('syncCart body=$responseBody');
         return CartModel.fromMap(data);
       } else {
         throw ServerException(
-          message: 'Failed to sync cart',
+          message: _errorMessage(response.body, 'Failed to sync cart'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -227,7 +219,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         return CheckoutResultModel.fromMap(data);
       } else {
         throw ServerException(
-          message: 'Failed to initiate checkout',
+          message: _errorMessage(response.body, 'Failed to initiate checkout'),
           statusCode: response.statusCode.toString(),
         );
       }
@@ -303,6 +295,16 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       rethrow;
     } catch (e) {
       throw ServerException(message: e.toString(), statusCode: '500');
+    }
+  }
+
+  /// Pulls `message` out of an error response, falling back to [fallback]
+  /// when the body isn't JSON or doesn't carry one.
+  String _errorMessage(String body, String fallback) {
+    try {
+      return (jsonDecode(body) as DataMap)['message'] as String? ?? fallback;
+    } catch (_) {
+      return fallback;
     }
   }
 }

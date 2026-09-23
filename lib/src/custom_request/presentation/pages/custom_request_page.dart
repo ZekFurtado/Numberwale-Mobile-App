@@ -5,16 +5,22 @@ import 'package:numberwale/core/utils/context_extension.dart';
 import 'package:numberwale/src/custom_request/presentation/bloc/custom_request_bloc.dart';
 
 class CustomRequestPage extends StatelessWidget {
-  const CustomRequestPage({super.key});
+  const CustomRequestPage({super.key, this.initialNumber});
+
+  /// Pre-fills the "number you want" field. Set when the page is reached via
+  /// an "Enquire Now" button on a number that is too expensive to buy online.
+  final String? initialNumber;
 
   @override
   Widget build(BuildContext context) {
-    return const _CustomRequestView();
+    return _CustomRequestView(initialNumber: initialNumber);
   }
 }
 
 class _CustomRequestView extends StatefulWidget {
-  const _CustomRequestView();
+  const _CustomRequestView({this.initialNumber});
+
+  final String? initialNumber;
 
   @override
   State<_CustomRequestView> createState() => _CustomRequestViewState();
@@ -31,6 +37,16 @@ class _CustomRequestViewState extends State<_CustomRequestView> {
   final _phonewordController = TextEditingController();
 
   String _selectedCategory = 'request';
+
+  @override
+  void initState() {
+    super.initState();
+    final number = widget.initialNumber;
+    if (number != null && number.isNotEmpty) {
+      _requestedController.text = number;
+      _selectedCategory = 'similar';
+    }
+  }
 
   static const List<String> _categories = [
     'numerology',

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:numberwale/core/errors/exceptions.dart';
@@ -233,9 +234,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }),
       );
 
-      print("AUTH RESPONSE");
-      print(response.statusCode);
-      print(response.body);
+      log('AUTH RESPONSE: ${response.statusCode} ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as DataMap;

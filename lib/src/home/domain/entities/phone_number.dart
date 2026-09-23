@@ -47,6 +47,19 @@ class PhoneNumber extends Equatable {
   /// Whether it's currently available for purchase
   final bool isAvailable;
 
+  /// Whether this number is sourced directly from the telecom operator,
+  /// allowing 5-minute activation (see [operatorState]/[operatorProvider]).
+  final bool isDirectFromOperator;
+
+  /// The home state the operator-provided SIM is registered in
+  final String? operatorState;
+
+  /// The telecom operator providing instant activation (Airtel, Jio, VI)
+  final String? operatorProvider;
+
+  /// How long the operator-provided SIM stays valid for
+  final DateTime? operatorValidityDate;
+
   /// Created date
   final DateTime? createdAt;
 
@@ -66,6 +79,10 @@ class PhoneNumber extends Equatable {
     this.isFeatured = false,
     this.isTrending = false,
     this.isAvailable = true,
+    this.isDirectFromOperator = false,
+    this.operatorState,
+    this.operatorProvider,
+    this.operatorValidityDate,
     this.createdAt,
   });
 

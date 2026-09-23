@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:numberwale/core/utils/routes.dart';
+import 'package:numberwale/src/numerology/domain/entities/numerology_plan.dart';
 import 'package:numberwale/src/numerology/domain/entities/numerology_score.dart';
 import 'package:numberwale/src/numerology/domain/usecases/calculate_numerology_score.dart';
 
@@ -17,16 +18,22 @@ const _orange = Color(0xFFFF8401);
 /// a hero image carousel, the three purchasable numerology report
 /// packages, trust stats, and a live number calculator.
 class NumerologyLandingPage extends StatelessWidget {
-  const NumerologyLandingPage({super.key});
+  const NumerologyLandingPage({super.key, this.showAppBar = true});
+
+  /// False when the page is hosted as a bottom-navigation tab, where the
+  /// app shell already supplies the title bar.
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
-    return const _NumerologyLandingView();
+    return _NumerologyLandingView(showAppBar: showAppBar);
   }
 }
 
 class _NumerologyLandingView extends StatefulWidget {
-  const _NumerologyLandingView();
+  const _NumerologyLandingView({required this.showAppBar});
+
+  final bool showAppBar;
 
   @override
   State<_NumerologyLandingView> createState() =>
@@ -68,8 +75,12 @@ class _NumerologyLandingViewState extends State<_NumerologyLandingView> {
     setState(() => _score = null);
   }
 
-  void _goToConsultation() {
-    Navigator.pushNamed(context, Routes.numerologyConsultation);
+  void _goToConsultation(NumerologyPlan plan) {
+    Navigator.pushNamed(
+      context,
+      Routes.numerologyConsultation,
+      arguments: plan,
+    );
   }
 
   @override
@@ -77,10 +88,12 @@ class _NumerologyLandingViewState extends State<_NumerologyLandingView> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Numerology'),
-        centerTitle: true,
-      ),
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text('Numerology'),
+              centerTitle: true,
+            )
+          : null,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,7 +126,7 @@ class _NumerologyLandingViewState extends State<_NumerologyLandingView> {
                       'Financial energy alignment',
                     ],
                     buttonText: 'Analyze My Current Number',
-                    onPressed: _goToConsultation,
+                    onPressed: () => _goToConsultation(NumerologyPlan.analyzeNumber),
                   ),
                   const SizedBox(height: 20),
                   _PricingCard(
@@ -133,7 +146,7 @@ class _NumerologyLandingViewState extends State<_NumerologyLandingView> {
                       'Financial energy alignment',
                     ],
                     buttonText: 'Find My Lucky Number',
-                    onPressed: _goToConsultation,
+                    onPressed: () => _goToConsultation(NumerologyPlan.newNumberGuidance),
                   ),
                   const SizedBox(height: 20),
                   _PricingCard(
@@ -162,7 +175,7 @@ class _NumerologyLandingViewState extends State<_NumerologyLandingView> {
                       'People planning number upgrade',
                     ],
                     buttonText: 'Get Combo Reports',
-                    onPressed: _goToConsultation,
+                    onPressed: () => _goToConsultation(NumerologyPlan.bothReports),
                   ),
                 ],
               ),

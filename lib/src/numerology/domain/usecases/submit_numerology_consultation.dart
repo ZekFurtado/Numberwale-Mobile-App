@@ -1,32 +1,29 @@
 import 'package:equatable/equatable.dart';
 import 'package:numberwale/core/usecases/usecase.dart';
 import 'package:numberwale/core/utils/typedef.dart';
+import 'package:numberwale/src/numerology/domain/entities/numerology_order.dart';
 import 'package:numberwale/src/numerology/domain/repositories/numerology_repository.dart';
 
-/// Use case to submit a numerology consultation request.
-/// Returns the success message from the server.
+/// Use case to submit a numerology consultation request. Returns the created
+/// request plus the payment order the customer must now pay.
 class SubmitNumerologyConsultation
-    extends UseCaseWithParams<String, NumerologyConsultationParams> {
+    extends UseCaseWithParams<NumerologyOrder, NumerologyConsultationParams> {
   final NumerologyRepository _repository;
 
   SubmitNumerologyConsultation(this._repository);
 
   @override
-  ResultFuture<String> call(NumerologyConsultationParams params) {
+  ResultFuture<NumerologyOrder> call(NumerologyConsultationParams params) {
     return _repository.submitConsultation(
       firstName: params.firstName,
       lastName: params.lastName,
-      gender: params.gender,
       day: params.day,
       month: params.month,
       year: params.year,
-      hours: params.hours,
-      minutes: params.minutes,
-      meridian: params.meridian,
-      birthPlace: params.birthPlace,
-      language: params.language,
       mobile: params.mobile,
       email: params.email,
+      serviceType: params.serviceType,
+      paymentGateway: params.paymentGateway,
       purchaseNumber: params.purchaseNumber,
     );
   }
@@ -35,33 +32,25 @@ class SubmitNumerologyConsultation
 class NumerologyConsultationParams extends Equatable {
   final String firstName;
   final String lastName;
-  final String gender;
   final String day;
   final String month;
   final String year;
-  final String hours;
-  final String minutes;
-  final String meridian;
-  final String birthPlace;
-  final String language;
   final String mobile;
   final String email;
+  final String serviceType;
+  final String paymentGateway;
   final String? purchaseNumber;
 
   const NumerologyConsultationParams({
     required this.firstName,
     required this.lastName,
-    required this.gender,
     required this.day,
     required this.month,
     required this.year,
-    required this.hours,
-    required this.minutes,
-    required this.meridian,
-    required this.birthPlace,
-    required this.language,
     required this.mobile,
     required this.email,
+    required this.serviceType,
+    required this.paymentGateway,
     this.purchaseNumber,
   });
 
@@ -69,17 +58,13 @@ class NumerologyConsultationParams extends Equatable {
   List<Object?> get props => [
         firstName,
         lastName,
-        gender,
         day,
         month,
         year,
-        hours,
-        minutes,
-        meridian,
-        birthPlace,
-        language,
         mobile,
         email,
+        serviceType,
+        paymentGateway,
         purchaseNumber,
       ];
 }

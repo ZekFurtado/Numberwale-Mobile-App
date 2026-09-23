@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:numberwale/core/utils/external_links.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/src/account/presentation/widgets/account_menu_item.dart';
 import 'package:numberwale/src/account/presentation/widgets/profile_header.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
 import 'package:numberwale/src/profile/presentation/bloc/profile_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -30,9 +28,6 @@ class _AccountViewState extends State<_AccountView> {
     super.initState();
     context.read<ProfileBloc>().add(const LoadProfileEvent());
   }
-
-  Future<void> _openUrl(String url) =>
-      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -140,6 +135,14 @@ class _AccountViewState extends State<_AccountView> {
                         },
                       ),
                       AccountMenuItem(
+                        icon: Icons.favorite,
+                        title: 'My Wishlist',
+                        subtitle: 'Numbers you saved for later',
+                        onTap: () {
+                          Navigator.pushNamed(context, Routes.wishlist);
+                        },
+                      ),
+                      AccountMenuItem(
                         icon: Icons.location_on,
                         title: 'Saved Addresses',
                         subtitle: 'Manage delivery addresses',
@@ -220,10 +223,9 @@ class _AccountViewState extends State<_AccountView> {
                         subtitle: 'Get expert guidance',
                         iconColor: theme.colorScheme.tertiary,
                         onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            Routes.numerologyConsultation,
-                          );
+                          // The landing page is where a report plan is
+                          // picked; the consultation form needs one.
+                          Navigator.pushNamed(context, Routes.numerology);
                         },
                         showDivider: false,
                       ),
@@ -270,13 +272,19 @@ class _AccountViewState extends State<_AccountView> {
                       AccountMenuItem(
                         icon: Icons.privacy_tip_outlined,
                         title: 'Privacy Policy',
-                        onTap: () => _openUrl(ExternalLinks.privacyPolicy),
+                        onTap: () {
+                          Navigator.pushNamed(context, Routes.privacyPolicy);
+                        },
                       ),
                       AccountMenuItem(
                         icon: Icons.description_outlined,
                         title: 'Terms & Conditions',
-                        onTap: () =>
-                            _openUrl(ExternalLinks.termsAndConditions),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            Routes.termsAndConditions,
+                          );
+                        },
                         showDivider: false,
                       ),
                     ],

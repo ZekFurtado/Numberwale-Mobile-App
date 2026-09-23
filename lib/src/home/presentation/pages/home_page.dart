@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/models/filter_models.dart';
+import 'package:numberwale/core/utils/product_actions.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/category_section.dart';
 import 'package:numberwale/core/widgets/deal_of_the_day_section.dart';
@@ -10,7 +11,6 @@ import 'package:numberwale/core/widgets/number_search_bar.dart';
 import 'package:numberwale/core/widgets/vip_numbers_section.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
 import 'package:numberwale/src/authentication/presentation/bloc/authentication_bloc.dart';
-import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/corporate_pack/presentation/widgets/corporate_elite_pack_section.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
@@ -162,6 +162,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Wires a fetched number onto the shared card actions: open the detail
+  /// page, add to cart, buy now (or enquire above the price limit) and the
+  /// wishlist heart.
+  VipNumber _toVipNumber(BuildContext context, PhoneNumber pn) {
+    return VipNumber(
+      phoneNumber: pn.number,
+      price: pn.price,
+      category: pn.category,
+      numerology: pn.numerology,
+      isWishlisted: watchIsWishlisted(context, pn.id),
+      onTap: () => Navigator.pushNamed(
+        context,
+        Routes.productDetail,
+        arguments: pn.number,
+      ),
+      onAddToCart: () => ProductActions.addToCart(context, pn),
+      onBuyNow: () => ProductActions.buyNow(context, pn),
+      onEnquire: () => ProductActions.enquire(context, pn),
+      onWishlist: () => ProductActions.toggleWishlist(context, pn),
+    );
+  }
+
   Widget _buildContent(BuildContext context, HomeState state) {
     final theme = Theme.of(context);
 
@@ -184,39 +206,12 @@ class _HomePageState extends State<HomePage> {
               );
             }).toList();
 
-      premiumNumbers = state.premiumNumbers.map((pn) {
-        return VipNumber(
-          phoneNumber: pn.number,
-          price: pn.price,
-          category: pn.category,
-          numerology: pn.numerology,
-          onTap: () => Navigator.pushNamed(
-            context,
-            Routes.productDetail,
-            arguments: pn.number,
-          ),
-          onAddToCart: () => context.read<CartBloc>().add(AddToCartEvent(
-                productId: pn.id ?? pn.number,
-              )),
-        );
-      }).toList();
+      premiumNumbers =
+          state.premiumNumbers.map((pn) => _toVipNumber(context, pn)).toList();
 
-      newlyAddedNumbers = state.newlyAddedNumbers.map((pn) {
-        return VipNumber(
-          phoneNumber: pn.number,
-          price: pn.price,
-          category: pn.category,
-          numerology: pn.numerology,
-          onTap: () => Navigator.pushNamed(
-            context,
-            Routes.productDetail,
-            arguments: pn.number,
-          ),
-          onAddToCart: () => context.read<CartBloc>().add(AddToCartEvent(
-                productId: pn.id ?? pn.number,
-              )),
-        );
-      }).toList();
+      newlyAddedNumbers = state.newlyAddedNumbers
+          .map((pn) => _toVipNumber(context, pn))
+          .toList();
     } else {
       categories = _getMockCategories(context).take(4).toList();
       premiumNumbers = [];
@@ -398,27 +393,24 @@ class _AppDrawer extends StatelessWidget {
             const _DrawerLogo(),
             const SizedBox(height: 16),
             const Divider(height: 1, color: _dividerColor),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: BlocBuilder<AuthenticationBloc, AuthenticationState>(
-                builder: (context, state) {
-                  final isAuthenticated = state is Authenticated;
-                  return _AuthButton(
-                    label: isAuthenticated ? 'My Account' : 'Sign In',
-                    icon:
-                        isAuthenticated ? Icons.person : Icons.person_outline,
+            BlocBuilder<AuthenticationBloc, AuthenticationState>(
+              builder: (context, state) {
+                if (state is! Authenticated) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: _AuthButton(
+                    label: 'My Account',
+                    icon: Icons.person,
                     color: theme.colorScheme.primary,
                     onTap: () {
                       Navigator.pop(context);
-                      if (isAuthenticated) {
-                        context.read<AppNavigationCubit>().selectTab(3);
-                      } else {
-                        Navigator.pushNamed(context, Routes.login);
-                      }
+                      context
+                          .read<AppNavigationCubit>()
+                          .selectTab(AppNavigationCubit.accountTab);
                     },
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 4),
             const Divider(height: 1, color: _dividerColor),
@@ -453,14 +445,6 @@ class _AppDrawer extends StatelessWidget {
               onTap: () => Navigator.pop(context),
             ),
             _DrawerNavItem(
-              label: 'Numerology',
-              trailing: const _NewBadge(),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, Routes.numerology);
-              },
-            ),
-            _DrawerNavItem(
               label: 'Contact Us',
               onTap: () {
                 Navigator.pop(context);
@@ -482,6 +466,21 @@ class _AppDrawer extends StatelessWidget {
               },
             ),
             const Divider(height: 1, color: _dividerColor),
+            ListTile(
+              leading: const Icon(Icons.favorite_border, color: _navy),
+              title: const Text(
+                'Wishlist',
+                style: TextStyle(
+                  color: _navy,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, Routes.wishlist);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.shopping_cart_outlined, color: _navy),
               title: const Text(
@@ -607,13 +606,11 @@ class _DrawerNavItem extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.highlighted = false,
-    this.trailing,
   });
 
   final String label;
   final VoidCallback onTap;
   final bool highlighted;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -648,32 +645,7 @@ class _DrawerNavItem extends StatelessWidget {
                 ),
               ),
             ),
-            ?trailing,
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NewBadge extends StatelessWidget {
-  const _NewBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: _AppDrawer._logoOrange,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'NEW',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.4,
         ),
       ),
     );

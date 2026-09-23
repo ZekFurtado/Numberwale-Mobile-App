@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:numberwale/core/utils/fancy_number_spans.dart';
+import 'package:numberwale/core/utils/product_actions.dart';
 
 const _orange = Color(0xFFFF8401);
 const _cardBorder = Color(0xFFFFD9B3);
@@ -11,6 +12,7 @@ const _trapAmber = Color(0xFFE0A62E);
 const _scorePurple = Color(0xFF8B5CF6);
 const _saveBlue = Color(0xFF2F80ED);
 const _timerRed = Color(0xFFE5484D);
+const _enquireDark = Color(0xFF2D3748);
 
 /// Large single-column card used for the "Newly Added VIP Numbers" section:
 /// a phone icon, the number in a bold orange pill (with its fancy pattern
@@ -31,6 +33,8 @@ class VipNumberCard extends StatelessWidget {
     this.dealEndsAt,
     this.onTap,
     this.onAddToCart,
+    this.onBuyNow,
+    this.onEnquire,
     this.onWishlist,
   });
 
@@ -56,6 +60,13 @@ class VipNumberCard extends StatelessWidget {
   final DateTime? dealEndsAt;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
+
+  /// Adds the number to the cart and continues to checkout.
+  final VoidCallback? onBuyNow;
+
+  /// Opens the enquiry form. Used instead of [onBuyNow] for numbers priced
+  /// above the online-purchase limit.
+  final VoidCallback? onEnquire;
   final VoidCallback? onWishlist;
 
   @override
@@ -65,6 +76,8 @@ class VipNumberCard extends StatelessWidget {
     final score = numerology?['score'] as int?;
     final hasNumerology = sum != null || trap != null || score != null;
     final hasDiscount = originalPrice != null && (discount ?? 0) > 0;
+    // Numbers over ₹5 lakh including GST are enquiry-only.
+    final isEnquiryOnly = ProductActions.isEnquiryOnly(price);
 
     return GestureDetector(
       onTap: onTap,
@@ -134,31 +147,53 @@ class VipNumberCard extends StatelessWidget {
                 Expanded(
                   child: SizedBox(
                     height: 48,
-                    child: OutlinedButton(
-                      onPressed: onTap,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _orange,
-                        backgroundColor: _pillCream,
-                        side: const BorderSide(color: _orange, width: 1.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Buy Now',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
+                    child: isEnquiryOnly
+                        ? ElevatedButton.icon(
+                            onPressed: onEnquire ?? onTap,
+                            icon: const Icon(Icons.phone, size: 16),
+                            label: const Text(
+                              'Enquire Now',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _enquireDark,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          )
+                        : OutlinedButton(
+                            onPressed: onBuyNow ?? onTap,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _orange,
+                              backgroundColor: _pillCream,
+                              side: const BorderSide(color: _orange, width: 1.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            child: const Text(
+                              'Buy Now',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                _SquareIconButton(
-                  icon: Icons.shopping_cart_outlined,
-                  onTap: onAddToCart,
-                ),
+                if (!isEnquiryOnly) ...[
+                  const SizedBox(width: 10),
+                  _SquareIconButton(
+                    icon: Icons.shopping_cart_outlined,
+                    onTap: onAddToCart,
+                  ),
+                ],
               ],
             ),
           ],

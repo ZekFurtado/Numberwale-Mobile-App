@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -105,6 +106,23 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
     return map;
   }
 
+  /// Pulls a human-readable error message out of an error response body,
+  /// so failures surface the server's actual reason instead of a generic
+  /// "Failed to ..." string. Returns null if the body has no usable message.
+  String? _extractErrorMessage(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'] ?? decoded['error'];
+        if (message is String && message.isNotEmpty) return message;
+      }
+    } catch (_) {
+      // Body wasn't JSON (or had no usable message) — fall back to the
+      // caller's default message.
+    }
+    return null;
+  }
+
   @override
   Future<AddressModel> addAddress({
     required String addressLine1,
@@ -141,8 +159,12 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
             ?? decoded;
         return AddressModel.fromMap(_normalise(raw));
       } else {
+        log(
+          'AddressRemoteDataSource.addAddress failed: '
+          '${response.statusCode} ${response.body}',
+        );
         throw ServerException(
-          message: 'Failed to add address',
+          message: _extractErrorMessage(response) ?? 'Failed to add address',
           statusCode: response.statusCode.toString(),
         );
       }

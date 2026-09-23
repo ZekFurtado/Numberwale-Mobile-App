@@ -13,11 +13,13 @@ import 'package:numberwale/src/authentication/presentation/bloc/authentication_b
 import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
 import 'package:numberwale/src/home/presentation/bloc/home_bloc.dart';
 import 'package:numberwale/src/profile/presentation/bloc/profile_bloc.dart';
+import 'package:numberwale/src/wishlist/presentation/bloc/wishlist_bloc.dart';
 import 'package:provider/provider.dart';
 
 import 'core/common/user_provider.dart';
 
 final _navigatorKey = GlobalKey<NavigatorState>();
+final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,8 +34,11 @@ void main() async {
   await di.init();
 
   // Redirect to login on any 401 response (session expired mid-use).
+  // Only fires once a token refresh has already been tried and failed —
+  // the session is genuinely gone at this point, not merely expired.
   di.sl<AuthenticatedClient>().onUnauthorized = () async {
     await di.sl<AuthLocalDataSource>().clearCache();
+    di.sl<WishlistBloc>().add(const ClearWishlistCacheEvent());
     _navigatorKey.currentState?.pushNamedAndRemoveUntil(
       Routes.login,
       (route) => false,
@@ -60,20 +65,50 @@ class NumberwaleApp extends StatelessWidget {
           BlocProvider(create: (_) => di.sl<CartBloc>()),
           BlocProvider(create: (_) => di.sl<ProfileBloc>()),
           BlocProvider(create: (_) => di.sl<AddressBloc>()),
+          BlocProvider(create: (_) => di.sl<WishlistBloc>()),
         ],
-        child: BlocListener<AuthenticationBloc, AuthenticationState>(
-          listener: (context, state) {
-            if (state is SignedOut) {
-              _navigatorKey.currentState?.pushNamedAndRemoveUntil(
-                Routes.login,
-                (route) => false,
-              );
-            }
-          },
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<AuthenticationBloc, AuthenticationState>(
+              listener: (context, state) {
+                if (state is SignedOut) {
+                  // Drop the previous account's saved numbers before the next
+                  // sign-in repopulates them.
+                  context
+                      .read<WishlistBloc>()
+                      .add(const ClearWishlistCacheEvent());
+                  _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                    Routes.login,
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            // The cart lives app-wide and its buttons are scattered across
+            // every product list, so confirmation and errors are reported
+            // here once rather than in each screen.
+            BlocListener<CartBloc, CartState>(
+              listener: _onCartStateChanged,
+            ),
+            BlocListener<WishlistBloc, WishlistState>(
+              listenWhen: (previous, current) =>
+                  previous.message != current.message &&
+                  current.message != null,
+              listener: (context, state) {
+                _scaffoldMessengerKey.currentState
+                  ?..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(
+                    content: Text(state.message!),
+                    duration: const Duration(seconds: 2),
+                  ));
+              },
+            ),
+          ],
           child: MaterialApp(
             title: 'Numberwale',
             debugShowCheckedModeBanner: false,
             navigatorKey: _navigatorKey,
+            scaffoldMessengerKey: _scaffoldMessengerKey,
             navigatorObservers: [routeObserver],
 
             // Theme configuration
@@ -89,5 +124,38 @@ class NumberwaleApp extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Reports the outcome of a cart mutation from anywhere in the app, and
+/// carries "Buy Now" through to the cart once the server has the item.
+void _onCartStateChanged(BuildContext context, CartState state) {
+  final messenger = _scaffoldMessengerKey.currentState;
+
+  if (state is ItemAddedToCart) {
+    if (state.buyNow) {
+      _navigatorKey.currentState?.pushNamed(Routes.cart);
+      return;
+    }
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: const Text('Added to cart'),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'View Cart',
+          onPressed: () => _navigatorKey.currentState?.pushNamed(Routes.cart),
+        ),
+      ));
+    return;
+  }
+
+  if (state is CartError) {
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(state.message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ));
   }
 }

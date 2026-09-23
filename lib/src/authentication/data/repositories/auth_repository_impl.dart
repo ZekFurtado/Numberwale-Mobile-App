@@ -28,6 +28,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? gstinNo,
   }) async {
     try {
+      await localDataSource.clearCache();
       final result = await remoteDataSource.register(
         name: name,
         email: email,
@@ -126,6 +127,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
+      // Drop any previous account's cached user + session cookies first, so
+      // a stale jar can never survive into the new session (which would show
+      // the previous account's cart/orders under the new login).
+      await localDataSource.clearCache();
       final user = await remoteDataSource.login(
         contact: contact,
         password: password,
@@ -156,6 +161,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String mobile,
   }) async {
     try {
+      await localDataSource.clearCache();
       final result = await remoteDataSource.signIn(mobile: mobile);
       return Right(result);
     } on ServerException catch (e) {
@@ -242,13 +248,15 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   ResultVoid signOut() async {
-    // Always clear local state — server logout is best-effort.
-    await localDataSource.clearCache();
+    // Log out server-side *first* — that request needs the session cookies,
+    // so clearing them beforehand would leave the session alive on the
+    // backend. Local state is cleared either way.
     try {
       await remoteDataSource.signOut();
     } catch (_) {
-      // Ignore server errors; local session is already cleared.
+      // Ignore server errors; the local session is cleared regardless.
     }
+    await localDataSource.clearCache();
     return const Right(null);
   }
 

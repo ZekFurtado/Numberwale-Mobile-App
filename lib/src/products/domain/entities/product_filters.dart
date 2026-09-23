@@ -12,6 +12,14 @@ class ProductFilters extends Equatable {
   final String? readyToPort; // 'rtp' or 'crtp'
   final bool? random;
   final String? seed;
+
+  /// Filters to numbers sourced directly from a telecom operator, allowing
+  /// 5-minute activation (see the "5 Mins Activation Numbers" API).
+  final bool? isDirectFromOperator;
+
+  /// Filters 5-min-activation numbers to a specific operator home state
+  /// (e.g. `Maharashtra`). Only meaningful alongside [isDirectFromOperator].
+  final String? operatorState;
   final AdvancedSearchFilters? advanced;
   final int page;
   final int limit;
@@ -36,6 +44,8 @@ class ProductFilters extends Equatable {
     this.readyToPort,
     this.random,
     this.seed,
+    this.isDirectFromOperator,
+    this.operatorState,
     this.advanced,
     this.page = 1,
     this.limit = 20,
@@ -54,6 +64,8 @@ class ProductFilters extends Equatable {
     String? readyToPort,
     bool? random,
     String? seed,
+    bool? isDirectFromOperator,
+    String? operatorState,
     AdvancedSearchFilters? advanced,
     int? page,
     int? limit,
@@ -71,6 +83,8 @@ class ProductFilters extends Equatable {
       readyToPort: readyToPort ?? this.readyToPort,
       random: random ?? this.random,
       seed: seed ?? this.seed,
+      isDirectFromOperator: isDirectFromOperator ?? this.isDirectFromOperator,
+      operatorState: operatorState ?? this.operatorState,
       advanced: advanced ?? this.advanced,
       page: page ?? this.page,
       limit: limit ?? this.limit,
@@ -111,6 +125,12 @@ class ProductFilters extends Equatable {
     if (readyToPort != null) params['readyToPort'] = readyToPort!;
     if (random == true) params['random'] = 'true';
     if (seed != null) params['seed'] = seed!;
+    if (isDirectFromOperator == true) {
+      params['isDirectFromOperator'] = 'true';
+    }
+    if (operatorState != null && operatorState!.isNotEmpty) {
+      params['operatorState'] = operatorState!;
+    }
     if (recentDays != null) params['recentDays'] = recentDays!.toString();
     if (sort != null) params['sort'] = sort!;
     if (skipCount == true) params['skipCount'] = 'true';
@@ -128,6 +148,8 @@ class ProductFilters extends Equatable {
     readyToPort,
     random,
     seed,
+    isDirectFromOperator,
+    operatorState,
     advanced,
     page,
     limit,

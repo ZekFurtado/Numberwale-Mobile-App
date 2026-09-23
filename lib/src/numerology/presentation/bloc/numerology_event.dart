@@ -10,33 +10,25 @@ abstract class NumerologyEvent extends Equatable {
 class SubmitNumerologyConsultationEvent extends NumerologyEvent {
   final String firstName;
   final String lastName;
-  final String gender;
   final String day;
   final String month;
   final String year;
-  final String hours;
-  final String minutes;
-  final String meridian;
-  final String birthPlace;
-  final String language;
   final String mobile;
   final String email;
+  final String serviceType;
+  final String paymentGateway;
   final String? purchaseNumber;
 
   const SubmitNumerologyConsultationEvent({
     required this.firstName,
     required this.lastName,
-    required this.gender,
     required this.day,
     required this.month,
     required this.year,
-    required this.hours,
-    required this.minutes,
-    required this.meridian,
-    required this.birthPlace,
-    required this.language,
     required this.mobile,
     required this.email,
+    required this.serviceType,
+    required this.paymentGateway,
     this.purchaseNumber,
   });
 
@@ -44,17 +36,34 @@ class SubmitNumerologyConsultationEvent extends NumerologyEvent {
   List<Object?> get props => [
         firstName,
         lastName,
-        gender,
         day,
         month,
         year,
-        hours,
-        minutes,
-        meridian,
-        birthPlace,
-        language,
         mobile,
         email,
+        serviceType,
+        paymentGateway,
         purchaseNumber,
       ];
+}
+
+class VerifyNumerologyPaymentEvent extends NumerologyEvent {
+  const VerifyNumerologyPaymentEvent({
+    required this.numerologyId,
+    required this.paymentId,
+    required this.paymentGateway,
+  });
+
+  final String numerologyId;
+  final String paymentId;
+  final String paymentGateway;
+
+  @override
+  List<Object?> get props => [numerologyId, paymentId, paymentGateway];
+}
+
+/// Returns the bloc to its initial state — used when a payment is cancelled
+/// or fails, so the form becomes interactive again.
+class ResetNumerologyEvent extends NumerologyEvent {
+  const ResetNumerologyEvent();
 }

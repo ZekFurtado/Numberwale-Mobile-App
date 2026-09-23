@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:numberwale/core/services/injection_container.dart' as di;
+import 'package:numberwale/core/utils/product_actions.dart';
+import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/src/corporate_pack/domain/entities/corporate_pack.dart';
 import 'package:numberwale/src/corporate_pack/presentation/bloc/corporate_pack_bloc.dart';
 import 'package:numberwale/src/home/domain/entities/phone_number.dart';
@@ -22,9 +24,11 @@ const _typeOptions = [
   (label: 'Numbers in Series', matchType: 'Series'),
   (label: 'All Mixed', matchType: 'All'),
   (label: 'Similar Start', matchType: 'Prefix'),
+  (label: 'Similar End', matchType: 'Suffix'),
+  (label: 'Similar Both Ends', matchType: 'Both Ends'),
 ];
 
-const _sizeOptions = [2, 3, 4, 5, 6, 7, 8, 9];
+const _sizeOptions = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 /// Home screen "Corporate Elite Pack (Jodi)" section - mirrors the web
 /// counterpart: a premium-collection badge, type/size filters, a horizontally
@@ -407,8 +411,30 @@ class _PackCard extends StatelessWidget {
     );
   }
 
+  /// Adds every number in the pack to the cart — the pack is sold as a set.
+  void _addPackToCart(BuildContext context) {
+    for (final product in pack.products) {
+      ProductActions.addToCart(context, product);
+    }
+  }
+
+  /// Adds the whole pack, then continues to the cart to check out. Packs
+  /// containing an enquiry-only number go to the enquiry form instead.
+  void _buyPack(BuildContext context) {
+    final enquiryOnly = pack.products
+        .any((p) => ProductActions.isEnquiryOnly(p.discountedPrice));
+    if (enquiryOnly) {
+      ProductActions.enquire(context, pack.products.first);
+      return;
+    }
+    _addPackToCart(context);
+    Navigator.pushNamed(context, Routes.cart);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isWishlisted = watchIsPackWishlisted(context, pack.id);
+
     return Container(
       width: 300,
       decoration: BoxDecoration(
@@ -435,9 +461,15 @@ class _PackCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _IconSquareButton(
-                    icon: Icons.shopping_cart_outlined, onTap: () {}),
+                  icon: Icons.shopping_cart_outlined,
+                  onTap: () => _addPackToCart(context),
+                ),
                 const SizedBox(width: 8),
-                _IconSquareButton(icon: Icons.favorite_border, onTap: () {}),
+                _IconSquareButton(
+                  icon: isWishlisted ? Icons.favorite : Icons.favorite_border,
+                  onTap: () =>
+                      togglePackWishlist(context, pack.id, pack.packSize),
+                ),
                 const Spacer(),
                 _IconSquareButton(
                   icon: Icons.copy_outlined,
@@ -445,7 +477,7 @@ class _PackCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => _buyPack(context),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _orange,
                     side: const BorderSide(color: _orange),

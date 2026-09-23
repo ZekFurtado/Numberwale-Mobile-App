@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:numberwale/core/models/filter_models.dart';
+import 'package:numberwale/core/utils/product_actions.dart';
 import 'package:numberwale/core/utils/routes.dart';
 import 'package:numberwale/core/widgets/empty_state.dart';
 import 'package:numberwale/core/widgets/filter_bottom_sheet.dart';
@@ -11,7 +12,7 @@ import 'package:numberwale/core/widgets/sort_bottom_sheet.dart';
 import 'package:numberwale/src/ai_search/domain/entities/ai_search_filters.dart';
 import 'package:numberwale/src/ai_search/presentation/bloc/ai_search_bloc.dart';
 import 'package:numberwale/src/app/presentation/cubit/app_navigation_cubit.dart';
-import 'package:numberwale/src/cart/presentation/bloc/cart_bloc.dart';
+import 'package:numberwale/src/home/domain/entities/phone_number.dart';
 import 'package:numberwale/src/products/domain/entities/advanced_search_filters.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
@@ -477,28 +478,30 @@ class _ExploreNumbersPageState extends State<ExploreNumbersPage> {
     );
   }
 
-  Widget _buildProductCard(BuildContext context, dynamic pn) {
-    return ProductCard(
-      phoneNumber: pn.number,
-      price: pn.price,
-      category: pn.category,
-      features: List<String>.from(pn.features),
-      discount: pn.discount > 0 ? pn.discount.toDouble() : null,
-      isFeatured: pn.isFeatured,
-      numerology: pn.numerology,
-      onTap: () => Navigator.pushNamed(
-        context,
-        Routes.productDetail,
-        arguments: pn.number,
+  Widget _buildProductCard(BuildContext context, PhoneNumber pn) {
+    // Wrapped in WishlistAware: `context` here is the GridView.builder
+    // itemBuilder's shared sliver context, not safe for context.select.
+    return WishlistAware(
+      itemId: pn.id,
+      builder: (context, isWishlisted) => ProductCard(
+        phoneNumber: pn.number,
+        price: pn.price,
+        category: pn.category,
+        features: List<String>.from(pn.features),
+        discount: pn.discount > 0 ? pn.discount.toDouble() : null,
+        isFeatured: pn.isFeatured,
+        numerology: pn.numerology,
+        isWishlisted: isWishlisted,
+        onTap: () => Navigator.pushNamed(
+          context,
+          Routes.productDetail,
+          arguments: pn.number,
+        ),
+        onAddToCart: () => ProductActions.addToCart(context, pn),
+        onBuyNow: () => ProductActions.buyNow(context, pn),
+        onEnquire: () => ProductActions.enquire(context, pn),
+        onWishlist: () => ProductActions.toggleWishlist(context, pn),
       ),
-      onAddToCart: () {
-        if (pn.id != null) {
-          context.read<CartBloc>().add(AddToCartEvent(productId: pn.id!));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${pn.number} added to cart')),
-          );
-        }
-      },
     );
   }
 

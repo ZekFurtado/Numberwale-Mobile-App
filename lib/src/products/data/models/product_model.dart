@@ -23,6 +23,10 @@ class ProductModel extends PhoneNumber {
     super.isFeatured,
     super.isTrending,
     super.isAvailable,
+    super.isDirectFromOperator,
+    super.operatorState,
+    super.operatorProvider,
+    super.operatorValidityDate,
     super.createdAt,
   });
 
@@ -108,6 +112,12 @@ class ProductModel extends PhoneNumber {
       isFeatured: map['isFeatured'] as bool? ?? false,
       isTrending: map['isTrending'] as bool? ?? false,
       isAvailable: isAvailable,
+      isDirectFromOperator: map['isDirectFromOperator'] as bool? ?? false,
+      operatorState: map['operatorState'] as String?,
+      operatorProvider: map['operatorProvider'] as String?,
+      operatorValidityDate: map['operatorValidityDate'] != null
+          ? DateTime.tryParse(map['operatorValidityDate'] as String)
+          : null,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt'] as String)
           : null,

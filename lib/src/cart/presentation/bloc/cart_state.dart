@@ -37,6 +37,20 @@ class AddingToCart extends CartState {
   const AddingToCart();
 }
 
+/// Emitted right after an item was added. Extends [CartLoaded] so screens that
+/// only care about "the cart is ready" keep working, while the app-level
+/// listener can tell an add apart from a plain refresh and confirm it.
+class ItemAddedToCart extends CartLoaded {
+  const ItemAddedToCart({required super.cart, this.buyNow = false});
+
+  /// True when the add came from a "Buy Now" button, meaning the app should
+  /// continue straight to the cart.
+  final bool buyNow;
+
+  @override
+  List<Object> get props => [cart, buyNow];
+}
+
 class ItemRemovedFromCart extends CartState {
   const ItemRemovedFromCart();
 }

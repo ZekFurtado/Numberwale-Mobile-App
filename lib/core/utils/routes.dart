@@ -17,6 +17,7 @@ import 'package:numberwale/src/authentication/presentation/pages/reset_password_
 import 'package:numberwale/src/products/presentation/pages/product_detail_page.dart';
 import 'package:numberwale/src/products/presentation/pages/advanced_search_page.dart';
 import 'package:numberwale/src/products/presentation/pages/newly_added_vip_numbers_page.dart';
+import 'package:numberwale/src/products/presentation/pages/five_min_activation_numbers_page.dart';
 import 'package:numberwale/src/products/domain/entities/product_filters.dart';
 import 'package:numberwale/src/cart/presentation/pages/cart_page.dart';
 import 'package:numberwale/src/checkout/presentation/pages/address_selection_page.dart';
@@ -35,12 +36,14 @@ import 'package:numberwale/src/info/presentation/pages/about_us_page.dart';
 import 'package:numberwale/src/info/presentation/pages/privacy_policy_page.dart';
 import 'package:numberwale/src/info/presentation/pages/terms_and_conditions_page.dart';
 import 'package:numberwale/src/custom_request/presentation/pages/custom_request_page.dart';
+import 'package:numberwale/src/numerology/domain/entities/numerology_plan.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_landing_page.dart';
 import 'package:numberwale/src/numerology/presentation/pages/numerology_page.dart';
 import 'package:numberwale/src/home/presentation/pages/categories_page.dart';
 import 'package:numberwale/src/services/presentation/pages/smart_ivr_page.dart';
 import 'package:numberwale/src/services/presentation/pages/sms_solutions_page.dart';
 import 'package:numberwale/src/services/presentation/pages/whatsapp_page.dart';
+import 'package:numberwale/src/wishlist/presentation/pages/wishlist_page.dart';
 
 class Routes {
   // Splash & Onboarding
@@ -64,6 +67,7 @@ class Routes {
   static const String advancedSearch = '/search/advanced';
   static const String productDetail = '/product';
   static const String newlyAddedVipNumbers = '/newly-added-vip-numbers';
+  static const String fiveMinActivationNumbers = '/5-min-activation-numbers';
 
   // Cart & Checkout
   static const String cart = '/cart';
@@ -80,6 +84,7 @@ class Routes {
 
   // Account
   static const String account = '/account';
+  static const String wishlist = '/wishlist';
   static const String editProfile = '/account/edit';
   static const String changePassword = '/account/change-password';
   static const String addresses = '/account/addresses';
@@ -134,6 +139,12 @@ class Routes {
           child: const NewlyAddedVipNumbersPage(),
         ),
 
+        // 5 Mins Activation Numbers (from the home screen drawer)
+        fiveMinActivationNumbers: (context) => BlocProvider(
+          create: (_) => di.sl<ProductBloc>(),
+          child: const FiveMinActivationNumbersPage(),
+        ),
+
         // Cart
         cart: (context) => const CartPage(),
 
@@ -150,6 +161,9 @@ class Routes {
         // Addresses
         addresses: (context) => const AddressListPage(),
 
+        // Wishlist
+        wishlist: (context) => const WishlistPage(),
+
         // Profile
         editProfile: (context) => const EditProfilePage(),
         changePassword: (context) => const ChangePasswordPage(),
@@ -164,16 +178,9 @@ class Routes {
           child: const CareersPage(),
         ),
 
-        // Custom Requests
-        customRequest: (context) => BlocProvider(
-          create: (_) => di.sl<CustomRequestBloc>(),
-          child: const CustomRequestPage(),
-        ),
+        // Custom Requests — customRequest itself is built in generateRoute so
+        // it can accept an optional number to pre-fill.
         numerology: (context) => const NumerologyLandingPage(),
-        numerologyConsultation: (context) => BlocProvider(
-          create: (_) => di.sl<NumerologyBloc>(),
-          child: const NumerologyPage(),
-        ),
 
         // Business Services
         smartIvr: (context) => const SmartIvrPage(),
@@ -194,6 +201,36 @@ class Routes {
     final args = settings.arguments;
 
     switch (routeName) {
+      // Custom number request / "Enquire Now" (optionally pre-filled with
+      // the number the customer is enquiring about)
+      case customRequest:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => di.sl<CustomRequestBloc>(),
+            child: CustomRequestPage(
+              initialNumber: args is String ? args : null,
+            ),
+          ),
+          settings: settings,
+        );
+
+      // Numerology consultation (with the chosen report plan)
+      case numerologyConsultation:
+        if (args is NumerologyPlan) {
+          return MaterialPageRoute(
+            builder: (_) => BlocProvider(
+              create: (_) => di.sl<NumerologyBloc>(),
+              child: NumerologyPage(plan: args),
+            ),
+            settings: settings,
+          );
+        }
+        // No plan chosen yet — send the user to pick one.
+        return MaterialPageRoute(
+          builder: (_) => const NumerologyLandingPage(),
+          settings: settings,
+        );
+
       // Advanced Search (returns the built ProductFilters via pop)
       case advancedSearch:
         return MaterialPageRoute<ProductFilters>(

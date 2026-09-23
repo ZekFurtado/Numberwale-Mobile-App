@@ -9,7 +9,9 @@ import 'package:numberwale/src/app/presentation/pages/placeholders/offer_zone_pl
 import 'package:numberwale/src/ai_search/presentation/bloc/ai_search_bloc.dart';
 import 'package:numberwale/src/explore/presentation/pages/explore_numbers_page.dart';
 import 'package:numberwale/src/home/presentation/pages/home_page.dart';
+import 'package:numberwale/src/numerology/presentation/pages/numerology_landing_page.dart';
 import 'package:numberwale/src/products/presentation/bloc/product_bloc.dart';
+import 'package:numberwale/src/wishlist/presentation/bloc/wishlist_bloc.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
@@ -17,9 +19,9 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // ProductBloc and AiSearchBloc live here — they're only needed by the
-    // Explore tab. CartBloc, ProfileBloc, AddressBloc, AppNavigationCubit are
-    // app-level (provided in main.dart) so all pushed routes can also access
-    // them.
+    // Explore tab. CartBloc, ProfileBloc, AddressBloc, WishlistBloc and
+    // AppNavigationCubit are app-level (provided in main.dart) so all pushed
+    // routes can also access them.
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => di.sl<ProductBloc>()),
@@ -30,13 +32,28 @@ class AppShell extends StatelessWidget {
   }
 }
 
-class _AppShellView extends StatelessWidget {
+class _AppShellView extends StatefulWidget {
   const _AppShellView();
 
+  @override
+  State<_AppShellView> createState() => _AppShellViewState();
+}
+
+class _AppShellViewState extends State<_AppShellView> {
+  @override
+  void initState() {
+    super.initState();
+    // Pull the saved numbers in once the session is established, so every
+    // heart icon in the app renders in the right state straight away.
+    context.read<WishlistBloc>().add(const LoadWishlistEvent());
+  }
+
+  // Index-aligned with AppNavigationCubit's tab constants.
   static final List<Widget> _pages = [
     const HomePage(),
     const ExploreNumbersPage(),
     const OfferZonePlaceholder(),
+    const NumerologyLandingPage(showAppBar: false),
     const AccountPage(),
   ];
 
@@ -44,6 +61,7 @@ class _AppShellView extends StatelessWidget {
     'Home',
     'Explore Numbers',
     'Offer Zone',
+    'Numerology',
     'Account',
   ];
 
@@ -52,13 +70,14 @@ class _AppShellView extends StatelessWidget {
     return BlocBuilder<AppNavigationCubit, AppNavigationState>(
       builder: (context, state) {
         return Scaffold(
-          // Don't show app bar for home page (index 0) and account page (index 3), they have their own
-          appBar: state.selectedIndex == 0 || state.selectedIndex == 3
+          // Home and Account bring their own app bars.
+          appBar: state.selectedIndex == AppNavigationCubit.homeTab ||
+                  state.selectedIndex == AppNavigationCubit.accountTab
               ? null
               : NumberwaleAppBar(
                   title: _titles[state.selectedIndex],
-                  showSearch:
-                      state.selectedIndex == 1, // Show search on Explore page
+                  showSearch: state.selectedIndex ==
+                      AppNavigationCubit.exploreTab,
                 ),
           body: IndexedStack(index: state.selectedIndex, children: _pages),
           bottomNavigationBar: AppBottomNavigation(

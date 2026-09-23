@@ -174,12 +174,14 @@ class _LoginPageState extends State<LoginPage> {
 
               // Email/Password mode
               if (_authMode == AuthMode.email) ...[
-                TextInputField(
+                TextFormField(
                   controller: _emailController,
-                  label: 'Email',
-                  hintText: 'Enter your email',
+                  decoration: InputDecoration(
+                    label: Text('Email'),
+                    hintText: 'Enter your email',
+                  ),
                   keyboardType: TextInputType.emailAddress,
-                  icon: const Icon(Icons.email_outlined),
+                  textInputAction: TextInputAction.next,
                   validator: _validateEmail,
                 ),
                 const SizedBox(height: 16),

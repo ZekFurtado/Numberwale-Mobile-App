@@ -81,7 +81,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
     result.fold(
       (failure) => emit(CartError(message: failure.message)),
-      (cart) => emit(CartLoaded(cart: cart)),
+      (cart) => emit(ItemAddedToCart(cart: cart, buyNow: event.buyNow)),
     );
   }
 
@@ -93,10 +93,16 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       RemoveCartItemParams(itemId: event.itemId),
     );
 
+    var removed = false;
     result.fold(
       (failure) => emit(CartError(message: failure.message)),
-      (_) => emit(const ItemRemovedFromCart()),
+      (_) {
+        removed = true;
+        emit(const ItemRemovedFromCart());
+      },
     );
+
+    if (removed) await _emitFreshCart(emit);
   }
 
   Future<void> _clearCartHandler(
@@ -105,9 +111,25 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   ) async {
     final result = await _clearCart();
 
+    var cleared = false;
     result.fold(
       (failure) => emit(CartError(message: failure.message)),
-      (_) => emit(const CartCleared()),
+      (_) {
+        cleared = true;
+        emit(const CartCleared());
+      },
+    );
+
+    if (cleared) await _emitFreshCart(emit);
+  }
+
+  /// Re-reads the server cart and emits it, so the UI never has to sit on a
+  /// transient state waiting for someone else to trigger a refresh.
+  Future<void> _emitFreshCart(Emitter<CartState> emit) async {
+    final result = await _getCart();
+    result.fold(
+      (failure) => emit(CartError(message: failure.message)),
+      (cart) => emit(CartLoaded(cart: cart)),
     );
   }
 
